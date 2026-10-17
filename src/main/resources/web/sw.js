@@ -1,5 +1,5 @@
-const CACHE = 'devflow-static-v1-1';
-const FILES = ['/', '/index.html', '/styles.css', '/app.js', '/engine.js', '/favicon.svg', '/manifest.webmanifest'];
+const CACHE = 'devflow-static-v2-0';
+const FILES = ['/', '/index.html', '/styles.css', '/app.js', '/engine.js', '/curriculum.js', '/challenge.js', '/experience.js', '/favicon.svg', '/manifest.webmanifest'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {

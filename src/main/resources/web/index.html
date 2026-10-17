@@ -10,6 +10,9 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/styles.css">
   <script src="/engine.js" defer></script>
+  <script src="/curriculum.js" defer></script>
+  <script src="/challenge.js" defer></script>
+  <script src="/experience.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -18,12 +21,15 @@
     <div class="brand"><div class="brand-mark">&gt;_</div><div><div class="brand-name">devflow<span class="brand-dot">.</span></div><div class="brand-sub">DEVELOPER ACADEMY</div></div></div>
     <div class="sidebar-title">WORKSPACE</div>
     <nav class="nav-list" aria-label="Main navigation">
+      <button class="nav-item" data-view="daily" title="Daily flow"><span class="nav-icon">◈</span> Daily flow <span class="nav-new">DAILY</span></button>
+      <button class="nav-item" data-view="java" title="Java path"><span class="nav-icon">J</span> Java path</button>
       <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span> Overview</button>
       <button class="nav-item" data-view="academy"><span class="nav-icon">▤</span> Typing academy</button>
       <button class="nav-item" data-view="lab"><span class="nav-icon">⌘</span> Code lab</button>
       <button class="nav-item" data-view="editor"><span class="nav-icon">{ }</span> Editor gym</button>
       <button class="nav-item" data-view="handicap"><span class="nav-icon">◎</span> Typing handicap</button>
       <button class="nav-item" data-view="insights"><span class="nav-icon">▥</span> Insights</button>
+      <button class="nav-item" data-view="intellij" title="IntelliJ IDEA"><span class="nav-icon">⌘</span> IntelliJ IDEA</button>
       <button class="nav-item" data-view="projects"><span class="nav-icon">⌁</span> Repo sessions</button>
     </nav>
     <div class="sidebar-title second-label">PREFERENCES</div>
@@ -46,7 +52,12 @@
 
     <main id="main-content">
       <section id="view-dashboard" class="view active-view">
-        <div class="welcome-heading"><div><p class="eyebrow">YOUR TRAINING OVERVIEW <span class="sparkle">✧</span></p><h1>Make every keystroke count<span class="violet">.</span></h1><p class="page-description">Build muscle memory. Master your editor. Lower your handicap.</p></div><div class="date-pill" id="today-pill"></div></div>
+        <div class="welcome-heading"><div><p class="eyebrow">YOUR TRAINING OVERVIEW <span class="sparkle">✧</span></p><h1>A little practice.<br>A lot more flow<span class="violet">.</span></h1><p class="page-description">Type with intent. Learn Java. Come back a little better.</p></div><div class="date-pill" id="today-pill"></div></div>
+        <div class="flow-hero panel">
+          <div class="flow-hero-copy"><span class="eyebrow"><span class="live-dot"></span> THE DAILY FLOW <span id="home-daily-number"></span></span><h2>Three rounds.<br>One daily ritual.</h2><p>A few minutes of Java, a keyboard, and a score worth sharing. Same challenge for everyone.</p><div class="flow-actions"><button class="primary-btn" id="home-challenge">Find today's flow <span>→</span></button><button class="text-link" data-go="java">Explore the Java path ↗</button></div><div class="flow-meta"><span>⌨ Typing comes first</span><span>◆ Learn something real</span><span>↗ Share your progress</span></div></div>
+          <div class="flow-art" aria-hidden="true"><div class="flow-art-top"><span>daily.java</span><span>● ● ●</span></div><div class="code-art"><span class="code-purple">while</span> (learning) {<br>  <span class="code-mint">practise</span>();<br>  progress<span class="code-purple">++</span>;<br>}</div><div class="tile-art"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="art-caption">ONE GOOD HABIT. EVERY DAY.</span></div>
+        </div>
+        <div class="habit-strip" id="habit-strip"></div>
         <div class="hero-grid">
           <div class="hero-primary panel">
             <div class="hero-glow"></div><div class="panel-overline">YOUR DEVELOPER HANDICAP</div>
@@ -77,6 +88,21 @@
           <button class="feature-card" data-go="lab"><div class="feature-symbol mint-text">&lt;/&gt;</div><div class="feature-main"><h3>Code Lab <span>↗</span></h3><p>Practise Java, Python, JavaScript, C# and SQL with real snippets.</p></div><div class="feature-meta">5 LANGUAGES · 20 DRILLS</div></button>
           <button class="feature-card" data-go="editor"><div class="feature-symbol amber-text">▣</div><div class="feature-main"><h3>Editor Gym <span>↗</span></h3><p>Fix code, use keyboard shortcuts and get comfortable editing.</p></div><div class="feature-meta">REAL EDITING PRACTICE</div></button>
         </div>
+      </section>
+
+      <section id="view-daily" class="view">
+        <div class="page-heading"><div><p class="eyebrow">YOUR DAILY KEYBOARD RITUAL</p><h1>Find your flow<span class="violet">.</span></h1><p class="page-description">Same Java. Same rules. Your own rhythm.</p></div><span class="tag violet-tag" id="daily-number"></span></div>
+        <div class="daily-layout"><div class="panel daily-main" id="daily-main"></div><aside class="daily-side"><div class="panel"><span class="eyebrow">A FAIR COMPARISON</span><h2>How it works</h2><ol class="rules-list"><li><strong>Three short typing rounds.</strong> Warm up, type real Java, seal the pattern.</li><li><strong>One Java insight.</strong> Predict what the code does. First answer counts.</li><li><strong>Save your first finish.</strong> Replay for practice. Your daily score stays put.</li><li><strong>Share without spoilers.</strong> Compare score cards with your friends.</li></ol><p class="quiet-copy">Resets at midnight UTC. Scores are saved locally and are self-reported. Accuracy earns 60%, pace 30%, Java insight 10%.</p></div><div class="panel"><span class="eyebrow">NEXT DAILY FLOW</span><div class="reset-clock" id="reset-clock">00:00:00</div><p class="quiet-copy">A fresh reason to return. No rush to finish today.</p></div></aside></div>
+        <div class="panel history-panel"><div class="card-heading"><h2>Your daily record</h2><span class="tag">LOCAL SCORES</span></div><div id="daily-history"></div></div>
+      </section>
+      <section id="view-java" class="view">
+        <div class="page-heading"><div><p class="eyebrow">UNDERSTANDING THROUGH YOUR FINGERTIPS</p><h1>Think Java. Type Java<span class="violet">.</span></h1><p class="page-description">Learn the idea. Type the pattern. Recall it. Explain why it works.</p></div><span class="tag violet-tag" id="java-progress"></span></div>
+        <div class="java-recommend panel" id="java-recommend"></div><div class="chapter-filters" id="java-filters"></div><div id="java-grid" class="java-grid"></div>
+      </section>
+      <section id="view-intellij" class="view">
+        <div class="page-heading"><div><p class="eyebrow">STAY IN YOUR EDITOR</p><h1>Your IDE. Your training ground<span class="violet">.</span></h1><p class="page-description">The same DevFlow daily challenge and Java path, inside IntelliJ IDEA.</p></div><span class="tag">INTELLIJ PLUGIN</span></div>
+        <div class="panel ide-hero"><div><div class="ide-badge">IJ</div><h2>A better break between builds.</h2><p>Open the DevFlow tool window, practise a Java pattern, and get back to your project. Your lessons, handicap, daily results and local progress are shared with the standalone app.</p><a class="primary-btn" href="https://github.com/ArvinUbhi/devflow-academy/actions" target="_blank" rel="noopener">Get the plugin from GitHub ↗</a></div><div class="ide-preview"><div class="ide-preview-head">IntelliJ IDEA <span>DevFlow</span></div><div class="ide-preview-body"><span class="eyebrow">DAILY FLOW</span><h3>A moment to find your rhythm.</h3><pre><code><span class="code-purple">int</span> score = 42;<br><span class="code-purple">boolean</span> ready = score &gt; 10;</code></pre><span class="tag violet-tag">JAVA · LEARN · TYPE · RECALL</span></div></div></div>
+        <div class="content-two-col history-panel"><div class="panel"><span class="eyebrow">SET UP ONCE</span><h2>Install in three steps</h2><ol class="rules-list"><li>Download the <strong>devflow-intellij</strong> artifact from a successful GitHub Actions build. Unzip the artifact once to find the plugin ZIP.</li><li>In IntelliJ IDEA, open <strong>Settings → Plugins → ⚙ → Install Plugin from Disk</strong> and select that plugin ZIP.</li><li>Open <strong>View → Tool Windows → DevFlow</strong>. The bundled local app starts automatically.</li></ol><p class="quiet-copy">Targets IntelliJ IDEA 2025.3.1 and later. Uses the IDE's bundled Java runtime and embedded browser. See the repository for build and compatibility checks.</p></div><div class="panel"><span class="eyebrow">PURPOSEFUL PRACTICE</span><h2>Use shortcuts, build fluency</h2><p class="section-intro">Each Java lesson includes an IntelliJ shortcut for Windows/Linux and macOS, from Rename to Extract Method. Practise these in your editor alongside the typing exercises.</p><p class="section-intro">DevFlow measures typing inside its practice fields. Your source files and normal IDE keystrokes are never captured.</p><a class="text-link" href="https://github.com/ArvinUbhi/devflow-academy/tree/main/intellij-plugin" target="_blank" rel="noopener">Plugin source and setup ↗</a></div></div>
       </section>
 
       <section id="view-academy" class="view"><div class="page-heading"><div><p class="eyebrow">STRUCTURED LEARNING</p><h1>Typing academy<span class="violet">.</span></h1><p class="page-description">Learn the movement. Repeat it slowly. Speed arrives later.</p></div><div class="heading-action"><span class="tag violet-tag" id="academy-progress">0 / 16 MASTERED</span></div></div>
@@ -121,13 +147,14 @@
         </form><div class="settings-side"><div class="panel"><span class="eyebrow">PRIVACY FIRST</span><h2>Local by design</h2><p class="section-intro">Your profile and training history are saved on this computer in <code>~/.devflow/progress.json</code>. Nothing is uploaded to a cloud service.</p><button class="secondary-btn wide" id="export-btn">Export progress as JSON ↓</button><label class="import-label secondary-btn wide">Import progress JSON <input id="import-file" type="file" accept=".json,application/json" hidden></label></div><div class="panel danger-zone"><span class="eyebrow">RESET</span><h2>Start from scratch</h2><p class="section-intro">This permanently resets lessons, rounds and session history on this device.</p><button class="danger-btn" id="reset-btn">Reset all progress</button></div></div></div>
       </section>
     </main>
-    <footer class="site-footer"><span>devflow<span class="violet">.</span> v1.1</span><span>Java 8 · Offline-first · Built for deliberate practice</span></footer>
+    <footer class="site-footer"><span>devflow<span class="violet">.</span> v2.0</span><span>Java 8 · Offline-first · Built for deliberate practice</span></footer>
   </div>
 </div>
 
 <div class="training-overlay hidden" id="training-overlay" role="dialog" aria-modal="true" aria-labelledby="training-title">
   <div class="training-shell">
     <div class="trainer-topbar"><div class="trainer-logo">&gt;_ <span>devflow.</span></div><div id="training-counter" class="trainer-counter">FOCUSED PRACTICE</div><button class="trainer-exit" id="exit-training">✕ <span>Exit</span></button></div>
+    <div id="trainer-learning" class="learning-workspace hidden"></div>
     <div class="trainer-content" id="trainer-typing">
       <div class="trainer-eyebrow" id="trainer-eyebrow">LESSON 01 · HOME ROW</div><h1 id="training-title">Home Row Fundamentals</h1><p class="trainer-description" id="training-description"></p>
       <div class="trainer-metrics"><div><small>EFFECTIVE SPEED</small><strong><span id="live-wpm">0</span> <em>WPM</em></strong></div><div><small>ACCURACY</small><strong><span id="live-accuracy">100</span><em>%</em></strong></div><div><small>TIME</small><strong id="live-time">0:00</strong></div><div><small>ERRORS</small><strong id="live-errors">0</strong></div></div>
@@ -136,9 +163,10 @@
       <div class="trainer-bottom"><span class="trainer-coach" id="trainer-coach">✦ Prioritise precision over speed.</span><button class="subtle-btn" id="restart-training">↻ Restart</button></div>
     </div>
     <div class="editor-workspace hidden" id="trainer-editor"><div class="trainer-eyebrow" id="editor-eyebrow">EDITOR GYM</div><h1 id="editor-title">Fix the code</h1><p class="trainer-description" id="editor-description"></p><div class="editor-instruction" id="editor-instruction"></div><div class="editor-terminal"><div class="editor-terminal-header"><span class="terminal-light red"></span><span class="terminal-light yellow"></span><span class="terminal-light green"></span><span id="editor-filename">main.java</span><span class="terminal-hint">TAB: 4 SPACES · PASTE DISABLED</span></div><textarea id="editor-input" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea></div><div class="editor-bottom"><span id="editor-feedback" role="status">Tip: use Home, End, Ctrl/Cmd + arrows and keyboard selection.</span><button class="primary-btn" id="check-edit">Run check →</button></div></div>
-    <div class="trainer-finish hidden" id="trainer-finish"><div class="finish-emblem">✓</div><div class="trainer-eyebrow" id="finish-eyebrow">SESSION COMPLETE</div><h1 id="finish-title">Nicely done.</h1><p id="finish-description">Every focused session adds up.</p><div class="finish-stats" id="finish-stats"></div><div class="finish-coaching" id="finish-coaching"></div><div class="finish-actions"><button class="secondary-btn" id="finish-exit">Return to dashboard</button><button class="primary-btn" id="finish-next">Keep training →</button></div></div>
+    <div class="trainer-finish hidden" id="trainer-finish"><div class="finish-emblem">✓</div><div class="trainer-eyebrow" id="finish-eyebrow">SESSION COMPLETE</div><h1 id="finish-title">Nicely done.</h1><p id="finish-description">Every focused session adds up.</p><div class="finish-stats" id="finish-stats"></div><div class="finish-coaching" id="finish-coaching"></div><div id="finish-share" class="share-actions hidden"><button class="primary-btn" id="share-result">Share my score ↗</button><button class="secondary-btn" id="download-card">Save score card ↓</button></div><div class="finish-actions"><button class="secondary-btn" id="finish-exit">Return to dashboard</button><button class="primary-btn" id="finish-next">Keep training →</button></div></div>
   </div>
 </div>
-<div class="toast" id="toast" role="status"></div>
+<div id="share-dialog" class="share-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="share-dialog-title"><div class="panel"><h2 id="share-dialog-title">Your score, ready to share.</h2><p class="section-intro">Select and copy the card below, then send it to a friend.</p><textarea id="share-text" readonly aria-label="Shareable score"></textarea><button class="primary-btn" id="close-share">Done</button></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

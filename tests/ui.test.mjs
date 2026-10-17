@@ -27,8 +27,8 @@ test('UI initialises and a three-part daily training session advances', async ()
   };
   let saved=null;
   const context={
-    window:{DevFlowEngine:E,scrollTo(){}},
-    document:{getElementById:node,querySelectorAll(){return [];},addEventListener(type,fn){docListeners[type]=fn;}},
+    window:{DevFlowEngine:E,DevFlowJava:require('../src/main/resources/web/curriculum.js'),DevFlowChallenge:require('../src/main/resources/web/challenge.js'),scrollTo(){}},
+    document:{getElementById:node,querySelector(){return null;},querySelectorAll(){return [];},addEventListener(type,fn){(docListeners[type]??=[]).push(fn);}},
     fetch:async(path,opts)=>path==='/api/state'&&(!opts||opts.method!=='PUT')?{ok:true,json:async()=>null}:{ok:true,json:async()=>({saved:true})},
     localStorage:{setItem(k,v){saved=v},getItem(){return saved}},
     navigator:{serviceWorker:{register:async()=>{}}},
@@ -36,6 +36,7 @@ test('UI initialises and a three-part daily training session advances', async ()
     setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){},
     confirm:()=>true,console,Date,Math,Number,Array,Object,String,JSON,URL,Blob,Event
   };
+  vm.runInNewContext(await readFile(new URL('../src/main/resources/web/experience.js',import.meta.url),'utf8'),context,{filename:'experience.js'});
   vm.runInNewContext(code,context,{filename:'app.js'});
   await new Promise(resolve=>setTimeout(resolve,5));
   assert.match(node('lesson-grid').innerHTML,/Meet your home row/);

@@ -1,4 +1,4 @@
-name: Build and test Java 8 app
+name: Build DevFlow app and IntelliJ plugin
 on:
   push:
   pull_request:
@@ -14,12 +14,42 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Compile for Java 8
+          cache: npm
+      - run: npm ci
+      - name: Compile standalone app for Java 8
         run: sh build.sh
-      - name: Run UI model and server tests
+      - name: Verify lessons, scoring, app flows, CLI and persistence
         run: npm test
-      - name: Upload single-file Java app
+      - name: Upload standalone Java app
         uses: actions/upload-artifact@v4
         with:
           name: devflow-jar
           path: devflow.jar
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Smoke test the standalone app on Java 8
+        run: node --test tests/server.test.mjs tests/cli.test.mjs
+  intellij:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: devflow-jar
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.1.0'
+      - name: Compile and package the IntelliJ plugin
+        run: gradle --no-daemon -p intellij-plugin buildPlugin verifyPluginStructure runtimeSmoke -x buildSearchableOptions
+      - name: Upload installable IntelliJ plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: devflow-intellij
+          path: intellij-plugin/build/distributions/*.zip

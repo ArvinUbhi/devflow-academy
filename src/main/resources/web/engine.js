@@ -47,7 +47,7 @@
     return 'BEGINNER · FINDING YOUR FLOW';
   }
   function defaultState() {
-    return {version:1, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true}, mastered:{},history:[],rounds:[],weak:{}};
+    return {version:2, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true}, mastered:{},history:[],rounds:[],weak:{},java:{},daily:[],dailyDraft:null};
   }
   function sanitizeState(input) {
     const base = defaultState();
@@ -62,9 +62,26 @@
       base.settings.showKeyboard = x.showKeyboard !== false;
     }
     if (input.mastered && typeof input.mastered === 'object' && !Array.isArray(input.mastered)) base.mastered = Object.fromEntries(Object.entries(input.mastered).filter(([k,v])=>/^lesson-\d{1,2}$/.test(k) && v === true));
-    if (Array.isArray(input.history)) base.history = input.history.filter(x => x && typeof x === 'object' && typeof x.date === 'string' && Number.isFinite(x.wpm) && Number.isFinite(x.accuracy)).slice(-10000);
+    if (Array.isArray(input.history)) base.history = input.history.filter(x => x && typeof x === 'object' && typeof x.date === 'string' && Number.isFinite(Date.parse(x.date)) && Number.isFinite(x.wpm) && Number.isFinite(x.accuracy)).slice(-10000);
     if (Array.isArray(input.rounds)) base.rounds = input.rounds.filter(x => x && typeof x === 'object' && Number.isFinite(x.score) && typeof x.date === 'string').slice(-1000);
     if (input.weak && typeof input.weak === 'object' && !Array.isArray(input.weak)) base.weak = Object.fromEntries(Object.entries(input.weak).filter(([k,v])=>k.length===1 && Number.isFinite(v) && v>=0).slice(0,100));
+    if(input.java && typeof input.java==='object' && !Array.isArray(input.java)) {
+      for(const [id,value] of Object.entries(input.java)) {
+        if(!/^java-([1-9]|1\d|2[0-4])$/.test(id)||!value||typeof value!=='object')continue;
+        base.java[id]={mastered:value.mastered===true,attempts:clamp(Number(value.attempts)||0,0,100000),due:typeof value.due==='string'&&Number.isFinite(Date.parse(value.due))?value.due:null,last:typeof value.last==='string'?value.last.slice(0,30):null};
+      }
+    }
+    const validSegment=x=>x&&typeof x==='object'&&['seconds','characters','attempts','errors','accuracy','wpm'].every(k=>Number.isFinite(x[k])&&x[k]>=0)&&x.accuracy<=100&&x.errors<=x.attempts;
+    const validDaily=x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.key)&&Number.isFinite(Date.parse(x.key))&&Number.isFinite(x.number)&&Number.isFinite(x.points)&&x.points>=0&&x.points<=1000&&Number.isFinite(x.wpm)&&Number.isFinite(x.accuracy)&&x.accuracy>=0&&x.accuracy<=100&&Array.isArray(x.segments)&&x.segments.length===3&&x.segments.every(validSegment);
+    if(Array.isArray(input.daily)) {
+      const seen=new Set();
+      base.daily=input.daily.filter(x=>{if(!validDaily(x)||seen.has(x.key))return false;seen.add(x.key);return true;}).slice(-1000).map(x=>({...x,practice:false}));
+    }
+    const d=input.dailyDraft;
+    if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d.key)&&Number.isFinite(Date.parse(d.key))&&Number.isFinite(d.number)&&Array.isArray(d.segments)&&d.segments.length<=3&&d.segments.every(validSegment)) {
+      base.dailyDraft={key:d.key,number:d.number,segments:d.segments,practice:d.practice===true};
+      if(typeof d.knowledge==='boolean')base.dailyDraft.knowledge=d.knowledge;
+    }
     return base;
   }
   return {clamp,round1,correctPrefix,accuracy,wpm,rhythm,segmentHandicap,roundScore,handicapIndex,tier,defaultState,sanitizeState};
