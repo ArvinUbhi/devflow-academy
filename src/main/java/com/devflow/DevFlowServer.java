@@ -14,10 +14,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -58,7 +62,7 @@ public final class DevFlowServer {
         if (port < 0 || port > 65535) throw new IllegalArgumentException("Invalid port");
         InetAddress host = InetAddress.getByName(lan ? "0.0.0.0" : "127.0.0.1");
         HttpServer server = HttpServer.create(new InetSocketAddress(host, port), 0);
-        Path dataDir = System.getenv("DEVFLOW_HOME") == null ? Paths.get(System.getProperty("user.home"), ".devflow") : Paths.get(System.getenv("DEVFLOW_HOME"));
+        Path dataDir = (System.getenv("DEVFLOW_HOME") == null ? Paths.get(System.getProperty("user.home"), ".devflow") : Paths.get(System.getenv("DEVFLOW_HOME"))).toAbsolutePath().normalize();
         server.createContext("/", new AppHandler(dataDir));
         server.setExecutor(Executors.newFixedThreadPool(4));
         server.start();
@@ -91,7 +95,7 @@ public final class DevFlowServer {
                 h.set("Content-Security-Policy", "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
                 if ("/api/health".equals(path)) {
                     if (!"GET".equals(ex.getRequestMethod())) { send(ex, 405, "Method not allowed", "text/plain"); return; }
-                    send(ex, 200, "{\"ok\":true,\"app\":\"DevFlow\",\"version\":\"2.0.0\"}", "application/json");
+                    send(ex, 200, "{\"ok\":true,\"app\":\"DevFlow\",\"version\":\"2.1.0\",\"dataId\":\"" + digest(file.getParent().toString()) + "\"}", "application/json");
                     return;
                 }
                 if ("/api/project".equals(path)) {
@@ -111,7 +115,7 @@ public final class DevFlowServer {
                     send(ex, 405, "Method not allowed", "text/plain"); return;
                 }
                 if ("/".equals(path)) path = "/index.html";
-                if (!(path.equals("/index.html") || path.equals("/styles.css") || path.equals("/app.js") || path.equals("/engine.js") || path.equals("/curriculum.js") || path.equals("/challenge.js") || path.equals("/experience.js") || path.equals("/favicon.svg") || path.equals("/manifest.webmanifest") || path.equals("/sw.js"))) {
+                if (!(path.equals("/index.html") || path.equals("/styles.css") || path.equals("/app.js") || path.equals("/engine.js") || path.equals("/curriculum.js") || path.equals("/challenge.js") || path.equals("/experience.js") || path.equals("/practice.js") || path.equals("/sync.js") || path.equals("/favicon.svg") || path.equals("/manifest.webmanifest") || path.equals("/sw.js"))) {
                     send(ex, 404, "Not found", "text/plain"); return;
                 }
                 InputStream in = DevFlowServer.class.getResourceAsStream("/web" + path);
@@ -132,11 +136,23 @@ public final class DevFlowServer {
             }
         }
 
-        private void state(HttpExchange ex) throws IOException {
+        private synchronized void state(HttpExchange ex) throws IOException {
+            // Separate lock file survives atomic progress.json replacement; also coordinates
+            // independent browser/IDE servers using the same DEVFLOW_HOME on different ports.
+            Files.createDirectories(file.getParent());
+            try (FileChannel channel = FileChannel.open(file.resolveSibling("progress.lock"), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                 FileLock lock = channel.lock()) {
+                lockedState(ex);
+            }
+        }
+
+        private void lockedState(HttpExchange ex) throws IOException {
             String method = ex.getRequestMethod();
+            String current = Files.exists(file) ? new String(Files.readAllBytes(file), StandardCharsets.UTF_8) : "null";
+            String etag = "\"" + digest(current) + "\"";
+            ex.getResponseHeaders().set("ETag", etag);
             if ("GET".equals(method)) {
-                if (!Files.exists(file)) { send(ex, 200, "null", "application/json"); return; }
-                send(ex, 200, new String(Files.readAllBytes(file), StandardCharsets.UTF_8), "application/json");
+                send(ex, 200, current, "application/json");
                 return;
             }
             if (!"PUT".equals(method)) { send(ex, 405, "Method not allowed", "text/plain"); return; }
@@ -149,6 +165,9 @@ public final class DevFlowServer {
             if (origin != null && (authority == null || !origin.equals("http://" + authority))) {
                 send(ex, 403, "Origin denied", "text/plain"); return;
             }
+            String match = ex.getRequestHeaders().getFirst("If-Match");
+            if (match == null) { send(ex, 428, "Reload DevFlow before saving progress", "text/plain"); return; }
+            if (!etag.equals(match)) { send(ex, 412, "Progress changed; reload and merge before saving", "text/plain"); return; }
             String json;
             try {
                 json = new String(readBounded(ex.getRequestBody(), MAX_STATE_BYTES), StandardCharsets.UTF_8).trim();
@@ -163,8 +182,18 @@ public final class DevFlowServer {
                 try { Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE); }
                 catch (java.nio.file.AtomicMoveNotSupportedException e) { Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING); }
             } finally { Files.deleteIfExists(temp); }
+            ex.getResponseHeaders().set("ETag", "\"" + digest(json) + "\"");
             send(ex, 200, "{\"saved\":true}", "application/json");
         }
+    }
+
+    private static String digest(String text) {
+        try {
+            byte[] bytes = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : bytes) hex.append(String.format("%02x", b & 255));
+            return hex.toString();
+        } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 
     private static byte[] readBounded(InputStream stream, int max) throws IOException {

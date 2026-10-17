@@ -5,7 +5,7 @@
   <description><![CDATA[
     Build typing fluency and Java understanding inside your IDE.
     Includes 24 Java lessons, active recall, daily score cards, a touch-typing academy,
-    IntelliJ shortcut coaching and a golf-inspired typing handicap.
+    12 Debug Dojo fixes, adaptive symbol practice, IntelliJ shortcut coaching and a typing handicap.
     Runs locally with no account, telemetry or source-code capture.
   ]]></description>
   <depends>com.intellij.modules.platform</depends>

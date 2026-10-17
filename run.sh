@@ -1,4 +1,3 @@
 #!/usr/bin/env sh
 set -eu
-cd "$(dirname "$0")"
-exec java -jar devflow.jar "$@"
+exec node "$(dirname "$0")/start.cjs" "$@"

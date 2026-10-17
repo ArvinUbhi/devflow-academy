@@ -6,7 +6,7 @@ The full DevFlow daily challenge, Java path, typing academy and handicap in an I
 
 Use IntelliJ IDEA **2025.3.1 or later** with the bundled JetBrains Runtime and Web Browser (JCEF) plugin enabled.
 
-1. Download the [prebuilt plugin ZIP](../downloads/devflow-intellij-2.0.0.zip), or download `devflow-intellij` from a successful build in [GitHub Actions](https://github.com/ArvinUbhi/devflow-academy/actions). Extract the artifact ZIP once to obtain the installable `devflow-intellij-2.0.0.zip`.
+1. Download the [prebuilt plugin ZIP](../downloads/devflow-intellij-2.1.0.zip), or download `devflow-intellij` from a successful build in [GitHub Actions](https://github.com/ArvinUbhi/devflow-academy/actions). Extract the artifact ZIP once to obtain the installable `devflow-intellij-2.1.0.zip`.
 2. Open **Settings → Plugins → gear menu → Install Plugin from Disk**. Select the plugin ZIP.
 3. Open **View → Tool Windows → DevFlow**, or find **DevFlow: Daily Java & Typing Practice** through Search Everywhere.
 

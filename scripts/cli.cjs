@@ -17,7 +17,7 @@ const origin = `http://127.0.0.1:${port}`;
 const read = (file, fallback=null) => {try{return JSON.parse(fs.readFileSync(file,'utf8'))}catch{return fallback}};
 function save(file,obj){fs.mkdirSync(dataDir,{recursive:true});const tmp=file+'.'+process.pid+'.tmp';fs.writeFileSync(tmp,JSON.stringify(obj,null,2)+'\n',{mode:0o600});fs.renameSync(tmp,file)}
 const args = process.argv.slice(2);
-let cmd = args[0] || 'serve';
+let cmd = !args[0] || args[0].startsWith('--port=') || args[0]==='--no-browser' ? 'serve' : args[0];
 function option(name){const i=args.indexOf('--'+name);const x=args.find(a=>a.startsWith('--'+name+'='));return x ? x.slice(name.length+3) : i>=0 ? args[i+1] : null}
 function fail(message){console.error('DevFlow: '+message);process.exitCode=1}
 function repoPath(){const source = option('repo') || (read(configFile)||{}).path || process.cwd(); const absolute=path.resolve(source);const git=spawnSync('git',['-C',absolute,'rev-parse','--show-toplevel'],{encoding:'utf8'});if(git.status!==0)throw Error('Not a Git repository: '+absolute+' (run git init, or pass --repo /path/to/repo)');return fs.realpathSync(git.stdout.trim())}
@@ -37,15 +37,20 @@ Commands:
   devflow history [--json]      Show local repo session history
   devflow serve                 Run normal Java app in foreground
 
-Run anywhere after: npm install -g github:ArvinUbhi/devflow-academy
-Or: npx --yes github:ArvinUbhi/devflow-academy <command>
+Downloaded folder: node start.cjs (or npm start)
+No Git, npm install or build is needed for standalone practice.
+Repo-linked commands additionally require Git.
+
+Network download without Git:
+  npx --yes --package=https://codeload.github.com/ArvinUbhi/devflow-academy/tar.gz/refs/heads/main devflow
+Optional global install: npm install -g github:ArvinUbhi/devflow-academy
 
 Important: WPM/accuracy measure completed DevFlow browser drills, not keystrokes in other editors.`)}
 function openBrowser(){if(args.includes('--no-browser'))return;const platform=process.platform;let c,aa;if(platform==='win32'){c='cmd';aa=['/c','start','""',origin]}else if(platform==='darwin'){c='open';aa=[origin]}else{c='xdg-open';aa=[origin]};const p=spawn(c,aa,{stdio:'ignore',detached:true});p.on('error',()=>{});p.unref()}
-function serve(){const child=spawn('java',['-jar',jar,...args.slice(cmd==='serve'?1:cmd==='help'?1:0)],{stdio:'inherit'});child.on('error',e=>fail('Java 8+ is required: '+e.message));child.on('exit',c=>{process.exitCode=c||0});process.on('SIGINT',()=>child.kill('SIGINT'));process.on('SIGTERM',()=>child.kill('SIGTERM'))}
+async function serve(){await require('./launcher.cjs').launch(args[0]==='serve'?args.slice(1):args)}
 async function main(){
 if(['help','--help','-h'].includes(cmd)){usage();return}
-if(cmd==='serve'){serve();return}
+if(cmd==='serve'){await serve();return}
 if(cmd==='init'){const meta=repoMeta(repoPath());save(configFile,meta);console.log('Linked repository: '+meta.path);console.log('Remote: '+(meta.remote||'(none)'));console.log('Next: devflow start');return}
 if(cmd==='start'){
  const existing=read(activeFile);if(existing&&running(existing.pid)){fail('A session is already active for '+existing.repo.name+'. Run devflow status or devflow stop first.');return}

@@ -15,7 +15,7 @@ async function app(initial=null,clipboard=true){
   return{ok:true,json:async()=>saved};
  };
  if(clipboard)Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async x=>{copied=x;}}});
- for(const file of ['engine.js','curriculum.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
+ for(const file of ['engine.js','curriculum.js','challenge.js','sync.js','practice.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
  await new Promise(r=>setTimeout(r,10));
  const click=sel=>{const el=w.document.querySelector(sel);assert.ok(el,`Missing ${sel}`);el.click();return el;};
  const finishTyping=()=>{
@@ -67,7 +67,7 @@ test('sharing works without browser clipboard access and restores focus',async t
  const a=await app(null,false);t.after(()=>a.dom.window.close());
  a.click('[data-view="daily"]');a.click('[data-flow="daily-start"]');
  for(let i=0;i<3;i++){a.finishTyping();a.click('#finish-next');}
- a.click('[data-answer="0"]');a.click('[data-flow="finish-learning"]');a.click('#share-result');
+ a.click('[data-answer="0"]');a.click('[data-flow="finish-learning"]');await a.tick();a.click('#share-result');
  assert.equal(a.w.document.getElementById('share-dialog').classList.contains('hidden'),false);
  assert.match(a.w.document.getElementById('share-text').value,/devflow/);
  a.click('#close-share');assert.equal(a.w.document.getElementById('share-dialog').classList.contains('hidden'),true);
@@ -83,4 +83,20 @@ test('a daily Java first answer survives reload and cannot be changed',async t=>
  assert.equal(b.w.document.querySelectorAll('[data-answer]').length,0);
  b.click('[data-flow="finish-learning"]');await b.tick();
  assert.equal(b.saved.daily[0].knowledge,false);
+});
+
+test('Debug Dojo accepts formatting changes, teaches the fix and records honest clean-fix milestones',async t=>{
+ const a=await app();t.after(()=>a.dom.window.close());a.click('[data-view="practice"]');a.click('[data-flow="debug-open"][data-id="debug-1"]');
+ const input=a.w.document.getElementById('editor-input'),fix=a.w.DevFlowPractice.fixes[0];
+ input.value=fix.expected.replaceAll('\n','\n  ');input.dispatchEvent(new a.w.Event('input',{bubbles:true}));
+ input.dispatchEvent(new a.w.KeyboardEvent('keydown',{key:'Enter',ctrlKey:true,bubbles:true}));await a.tick();
+ assert.match(a.w.document.getElementById('trainer-learning').textContent,/compares references/);assert.equal(a.saved.history.at(-1).kind,'debug');
+ a.click('[data-go="practice"]');assert.match(a.w.document.getElementById('dojo-progress').textContent,/1 \/ 12/);
+ a.click('[data-flow="debug-open"][data-id="debug-2"]');a.click('[data-flow="debug-hint"]');input.value=a.w.DevFlowPractice.fixes[1].expected;input.dispatchEvent(new a.w.Event('input',{bubbles:true}));a.click('#check-edit');await a.tick();
+ assert.equal(a.saved.history.at(-1).assisted,true);assert.match(a.w.document.getElementById('dojo-progress').textContent,/1 \/ 12/);assert.deepEqual(a.errors,[]);
+});
+test('a targeted tune-up can be launched, typed and saved from the studio',async t=>{
+ const a=await app();t.after(()=>a.dom.window.close());a.click('[data-view="practice"]');a.click('#tune-up [data-flow="tune-up"]');
+ assert.match(a.w.document.getElementById('typing-prompt').textContent,/[;{(]/);a.finishTyping();await a.tick();
+ assert.equal(a.saved.history.at(-1).id,'tune-up');assert.equal(a.saved.history.at(-1).kind,'drill');assert.deepEqual(a.errors,[]);
 });

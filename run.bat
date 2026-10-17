@@ -1,3 +1,2 @@
 @echo off
-cd /d "%~dp0"
-java -jar devflow.jar %*
+node "%~dp0start.cjs" %*
