@@ -1,0 +1,25 @@
+name: Build and test Java 8 app
+on:
+  push:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile for Java 8
+        run: sh build.sh
+      - name: Run UI model and server tests
+        run: npm test
+      - name: Upload single-file Java app
+        uses: actions/upload-artifact@v4
+        with:
+          name: devflow-jar
+          path: devflow.jar

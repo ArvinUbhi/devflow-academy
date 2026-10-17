@@ -1,0 +1,14 @@
+{
+  "name": "devflow-academy",
+  "version": "1.1.0",
+  "bin": {
+    "devflow": "scripts/cli.cjs"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "start": "node scripts/start.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
