@@ -37,7 +37,7 @@ test('downloaded folder launches offline with one command, opens UI after readin
  }
  const noBrowser=process.platform==='linux'?[]:['--no-browser'];
  const first=child([join(folder,'start.cjs'),...noBrowser],{cwd:home,env});
- t.after(async()=>{first.stop();await first.finished;await rm(home,{recursive:true,force:true});});
+ t.after(async()=>{first.stop();const [code]=await first.finished;assert.equal(code,0,first.output());await rm(home,{recursive:true,force:true});});
  await waitFor(first,/DevFlow is ready/);
  assert.equal((await (await fetch(`http://127.0.0.1:${p}/api/health`)).json()).version,'2.1.0');
  const second=child([join(folder,'start.cjs'),'--no-browser'],{cwd:home,env});const [code]=await second.finished;

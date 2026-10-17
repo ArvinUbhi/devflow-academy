@@ -37,8 +37,13 @@ Commands:
   devflow history [--json]      Show local repo session history
   devflow serve                 Run normal Java app in foreground
 
-Run anywhere after: npm install -g github:ArvinUbhi/devflow-academy
-Or: npx --yes github:ArvinUbhi/devflow-academy <command>
+Downloaded folder: node start.cjs (or npm start)
+No Git, npm install or build is needed for standalone practice.
+Repo-linked commands additionally require Git.
+
+Network download without Git:
+  npx --yes --package=https://codeload.github.com/ArvinUbhi/devflow-academy/tar.gz/refs/heads/main devflow
+Optional global install: npm install -g github:ArvinUbhi/devflow-academy
 
 Important: WPM/accuracy measure completed DevFlow browser drills, not keystrokes in other editors.`)}
 function openBrowser(){if(args.includes('--no-browser'))return;const platform=process.platform;let c,aa;if(platform==='win32'){c='cmd';aa=['/c','start','""',origin]}else if(platform==='darwin'){c='open';aa=[origin]}else{c='xdg-open';aa=[origin]};const p=spawn(c,aa,{stdio:'ignore',detached:true});p.on('error',()=>{});p.unref()}

@@ -66,8 +66,8 @@ async function launch(args = []) {
   const child = spawn('java', ['-Xmx128m', '-jar', jar, '--port=' + port, '--no-browser'], {
     stdio: ['ignore', 'pipe', 'pipe'], env: {...process.env, DEVFLOW_HOME: dataDir}
   });
-  let output = '', exited = false;
-  const stop = () => child.kill('SIGTERM');
+  let output = '', exited = false, stopping = false;
+  const stop = () => {stopping = true; child.kill('SIGTERM');};
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
   const done = new Promise((resolve, reject) => {
@@ -95,7 +95,7 @@ async function launch(args = []) {
     if (!args.includes('--no-browser')) openBrowser(url);
     const code = await done;
     // A simultaneous second launch may attach to the first process instead.
-    if (code && !(await health(url))) throw Error('Java stopped unexpectedly. ' + output.trim());
+    if (code && !stopping && !(await health(url))) throw Error('Java stopped unexpectedly. ' + output.trim());
   } finally {
     process.removeListener('SIGINT', stop);
     process.removeListener('SIGTERM', stop);

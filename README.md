@@ -2,19 +2,6 @@
 
 **A Java 8-compatible Java and typing academy for software engineers.** Master touch typing, train in Java/Python/JavaScript/C#/SQL, develop editor fluency, improve a golf-inspired Typing Handicap, and track project-linked practice in the local CLI.
 
-## New in v2
-
-- **Daily Flow:** three short Java typing rounds and a comprehension check. Identical, versioned prompts for each UTC date, weighted accuracy/pace scoring, reload-and-resume and a saved first finish. Replays are practice and cannot replace that day's result.
-- **Score sharing:** spoiler-free Wordle-style tiles, native sharing or clipboard copy, a manual-copy fallback, and downloadable SVG score cards. Sharing is always initiated by the user.
-- **24 Java lessons:** learn the concept, type a working example, recall a small pattern without copying, and explain the behaviour. Covers fundamentals, flow control, collections, objects, reliability and Java 8 streams/lambdas.
-- **Real mastery:** at least 94% typing accuracy, unassisted recall and a correct first comprehension answer. Hints support learning; spaced reviews return after 1–14 days.
-- **IntelliJ plugin:** the full app inside a tool window, bundled local server, shared local progress, automatic startup, browser fallback and proper process/browser disposal. See [installation](intellij-plugin/README.md).
-- **Deliberate practice UX:** a focused daily entry point, Java chapter filters, practice streaks, earned XP, keyboard focus states, reduced-motion support and UK/US symbol-key guidance.
-
-Touch typing still comes first: the 16 foundation lessons, multilingual code lab, Editor Gym, Typing Handicap, insights and repo-linked CLI are retained. Existing v1 progress migrates automatically, and v1/v2 backups can both be imported.
-
-Download the [installable IntelliJ plugin ZIP](downloads/devflow-intellij-2.1.0.zip), or run the standalone app below.
-
 ## Download at work. Start with one command.
 
 Download [DevFlow for work (ZIP)](downloads/devflow-work-2.1.0.zip), extract it, and open a terminal in the extracted `devflow` folder. With **Java 8+ and Node 22+ on PATH**, run:
@@ -44,6 +31,19 @@ The downloadable ZIP is the offline option. All app content is bundled. Progress
 - **Practice studio:** short, targeted drills for your weakest keys, including Java punctuation, Space, Enter and UK symbols. Pick an individual key to work on.
 - **Visible progress:** a daily minute goal, seven-day activity strip and six earned milestones. Clean fixes require no hints and no failed checks.
 - **Safer shared progress:** browser/IntelliJ saves use revisions and merge new completed work. Concurrent settings changes merge by field; an existing daily result wins. Offline work has a browser backup and a retry button. Reset conflicts are reported, and stale windows cannot restore cleared history. Backup import merges into current progress.
+
+## New in v2
+
+- **Daily Flow:** three short Java typing rounds and a comprehension check. Identical, versioned prompts for each UTC date, weighted accuracy/pace scoring, reload-and-resume and a saved first finish. Replays are practice and cannot replace that day's result.
+- **Score sharing:** spoiler-free Wordle-style tiles, native sharing or clipboard copy, a manual-copy fallback, and downloadable SVG score cards. Sharing is always initiated by the user.
+- **24 Java lessons:** learn the concept, type a working example, recall a small pattern without copying, and explain the behaviour. Covers fundamentals, flow control, collections, objects, reliability and Java 8 streams/lambdas.
+- **Real mastery:** at least 94% typing accuracy, unassisted recall and a correct first comprehension answer. Hints support learning; spaced reviews return after 1–14 days.
+- **IntelliJ plugin:** the full app inside a tool window, bundled local server, shared local progress, automatic startup, browser fallback and proper process/browser disposal. See [installation](intellij-plugin/README.md).
+- **Deliberate practice UX:** a focused daily entry point, Java chapter filters, practice streaks, earned XP, keyboard focus states, reduced-motion support and UK/US symbol-key guidance.
+
+Touch typing still comes first: the 16 foundation lessons, multilingual code lab, Editor Gym, Typing Handicap, insights and repo-linked CLI are retained. Existing v1 progress migrates automatically, and v1/v2 backups can both be imported.
+
+Download the [installable IntelliJ plugin ZIP](downloads/devflow-intellij-2.1.0.zip), or run the standalone app below.
 
 ## Repo-linked typing sessions: init, start, status, stop
 
@@ -105,7 +105,7 @@ npm ci
 npm test
 ```
 
-GitHub Actions rebuilds the JAR on each commit and executes Node 22 tests. CI uploads the JAR, a portable work ZIP and the IntelliJ plugin. Windows, macOS and Linux CI each smoke-test the launcher on Java 8. Local `npm test` uses temporary data folders and does not touch your actual history.
+GitHub Actions rebuilds the JAR on each commit and executes Node 22 tests. CI uploads the JAR, a portable work ZIP and the IntelliJ plugin. CI smoke-tests the launcher on Java 8 for Windows, Linux and Intel macOS, plus Java 17 for Apple Silicon macOS. Local `npm test` uses temporary data folders and does not touch your actual history.
 
 You can also launch with `./run.sh` on Linux/macOS or `run.bat` on Windows.
 
