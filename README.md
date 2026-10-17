@@ -20,7 +20,7 @@ Download the [installable IntelliJ plugin ZIP](downloads/devflow-intellij-2.0.0.
 With Java 8+ on your PATH and Node 22 installed:
 
 ```sh
-npx --yes github:ArvinUbhi/devflow-academy
+npx --yes github:ArvinUbhi/devflow-academy#devflow-v2-java-daily-intellij
 ```
 
 This runs the bundled Java executable and opens the DevFlow web app locally at `http://127.0.0.1:8765`. `Ctrl+C` stops a foreground launch. No Java build tools, database, cloud account or npm build are needed to **run** the project. It runs locally from any OS with Java, Node and npm available. It is not a hosted public service.
@@ -32,7 +32,7 @@ Alternative: download `devflow.jar` from the repository and run `java -jar devfl
 Install the command once (requires Git, Node 22 and Java 8+):
 
 ```sh
-npm install -g github:ArvinUbhi/devflow-academy
+npm install -g github:ArvinUbhi/devflow-academy#devflow-v2-java-daily-intellij
 cd /path/to/your/git/repo
 devflow init
 devflow start
@@ -41,7 +41,7 @@ devflow stop
 devflow history
 ```
 
-Or call each command without installing globally: `npx --yes github:ArvinUbhi/devflow-academy start`.
+Or call each command without installing globally: `npx --yes github:ArvinUbhi/devflow-academy#devflow-v2-java-daily-intellij start`.
 
 - `devflow init [--repo PATH]` links a local Git repository by resolving its root. Git remote metadata is captured if available. It does **not** commit changes to that repository.
 - `devflow start [--repo PATH] [--no-browser]` starts the Java web UI in the background and associates completed **DevFlow drills** with the linked repository.
