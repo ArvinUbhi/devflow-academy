@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 
 /** Dependency-free, Java 8-compatible local web server for DevFlow. */
 public final class DevFlowServer {
-    private static final int MAX_STATE_BYTES = 2 * 1024 * 1024;
+    private static final int MAX_STATE_BYTES = 8 * 1024 * 1024;
     private static final Map<String, String> TYPES = new HashMap<String, String>();
     static {
         TYPES.put(".html", "text/html; charset=utf-8");

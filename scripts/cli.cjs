@@ -65,7 +65,7 @@ if(cmd==='status'){
 if(cmd==='stop'){
  const active=read(activeFile);if(!active){fail('No active session to stop');return}
  const summary={...active,endedAt:new Date().toISOString(),...summarize(active)};delete summary.pid;
- const history=read(sessionsFile,[]);history.push(summary);save(sessionsFile,history.slice(-1000));fs.unlinkSync(activeFile);
+ const history=read(sessionsFile,[]);history.push(summary);save(sessionsFile,history.slice(-10000));fs.unlinkSync(activeFile);
  if(running(active.pid)){try{process.kill(active.pid,'SIGTERM')}catch{}}
  console.log(`Saved: ${active.repo.name} · ${summary.drills} drills · ${summary.wpm??'—'} WPM · ${summary.accuracy===null?'—':summary.accuracy+'%'}\nSession stopped.`);return
 }

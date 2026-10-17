@@ -62,8 +62,8 @@
       base.settings.showKeyboard = x.showKeyboard !== false;
     }
     if (input.mastered && typeof input.mastered === 'object' && !Array.isArray(input.mastered)) base.mastered = Object.fromEntries(Object.entries(input.mastered).filter(([k,v])=>/^lesson-\d{1,2}$/.test(k) && v === true));
-    if (Array.isArray(input.history)) base.history = input.history.filter(x => x && typeof x === 'object' && typeof x.date === 'string' && Number.isFinite(x.wpm) && Number.isFinite(x.accuracy)).slice(-500);
-    if (Array.isArray(input.rounds)) base.rounds = input.rounds.filter(x => x && typeof x === 'object' && Number.isFinite(x.score) && typeof x.date === 'string').slice(-100);
+    if (Array.isArray(input.history)) base.history = input.history.filter(x => x && typeof x === 'object' && typeof x.date === 'string' && Number.isFinite(x.wpm) && Number.isFinite(x.accuracy)).slice(-10000);
+    if (Array.isArray(input.rounds)) base.rounds = input.rounds.filter(x => x && typeof x === 'object' && Number.isFinite(x.score) && typeof x.date === 'string').slice(-1000);
     if (input.weak && typeof input.weak === 'object' && !Array.isArray(input.weak)) base.weak = Object.fromEntries(Object.entries(input.weak).filter(([k,v])=>k.length===1 && Number.isFinite(v) && v>=0).slice(0,100));
     return base;
   }

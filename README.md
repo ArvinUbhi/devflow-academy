@@ -47,7 +47,7 @@ Or call each command without installing globally: `npx --yes github:ArvinUbhi/de
 - Personalized weak-key drills and guided daily training.
 - Three-part official typing handicap assessments with rolling best-3-of-8 index (0 best, 54 worst).
 - Dark responsive interface with dashboards, speed charts, accuracy, activity history and repo-linked activity.
-- Local JSON progress and repository-session history, with manual backup/export and restore.
+- Local JSON progress (up to 10,000 recent drills) and repository-session history (up to 10,000 sessions), with manual backup/export and restore.
 - No external resources at runtime. Content stays on the device running Java.
 
 ### How handicap is calculated

@@ -195,6 +195,20 @@ function renderInsights(){
  $('weak-keys').innerHTML=weak.length?weak.map(([k,count])=>`<div class="weak-row"><div class="weak-key">${esc(k===' '?'␣':k==='\n'?'↵':k)}</div><div class="weak-meter"><div style="width:${Math.min(100,count/Math.max(1,weak[0][1])*100)}%"></div></div><span>${count} misses</span></div>`).join(''):'<div class="list-empty">Your mistyped keys will appear here as you practise.</div>';
  $('session-history').innerHTML=latest.length?`<table class="list-table"><thead><tr><th>DATE</th><th>EXERCISE</th><th>WPM</th><th>ACCURACY</th><th>TIME</th></tr></thead><tbody>${latest.slice().reverse().map(h=>`<tr><td>${esc(formatDate(h.date))}</td><td>${esc(h.title||h.kind)}</td><td>${round(h.wpm)}</td><td>${round(h.accuracy)}%</td><td>${Math.round(h.seconds)}s</td></tr>`).join('')}</tbody></table>`:'<div class="list-empty">No sessions yet. Take your first lesson to start tracking progress.</div>';
 }
+function trendGraph(el, entries, field, label){
+ const values=entries.filter(x=>Number.isFinite(x[field])).slice(-30);
+ if(!values.length){el.innerHTML='<div class="chart-empty">Complete a repo-linked session to see your trend</div>';return;}
+ const ceiling=field==='accuracy'?100:Math.max(60,...values.map(x=>x[field]));
+ const w=700,h=170,p=20;
+ const points=values.map((item,i)=>{
+   const x=p+(values.length===1?0.5:i/(values.length-1))*(w-2*p);
+   const y=h-p-(item[field]/ceiling)*(h-2*p);
+   return [x,y];
+ });
+ const line=points.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+ const dots=points.map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="4" fill="#c1b4ff"><title>${round(values[i][field])}${field==='accuracy'?'%':' WPM'} · ${esc(new Date(values[i].endedAt||values[i].startedAt).toLocaleDateString())}</title></circle>`).join('');
+ el.innerHTML=`<svg role="img" aria-label="${esc(label)} over completed repo sessions" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="M${p},${h-p} H${w-p}" fill="none" stroke="#394155" stroke-width="2"/><polyline points="${line}" fill="none" stroke="#b8a8ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>${dots}</svg>`;
+}
 function renderProjects(){
  const active=projectInfo.active, past=Array.isArray(projectInfo.sessions)?projectInfo.sessions:[];
  const box=$('project-active'), stat=$('project-summary'), table=$('project-sessions');if(!box||!stat||!table)return;
@@ -204,6 +218,7 @@ function renderProjects(){
  box.innerHTML=active?`<span class="eyebrow">ACTIVE REPO SESSION</span><h2>${esc(active.repo.name)}</h2><p class="section-intro">${esc(active.repo.path)}</p><p>Started ${esc(new Date(active.startedAt).toLocaleString())}</p>`:'<span class="eyebrow">NO ACTIVE REPO SESSION</span><h2>Connect a Git repository</h2><p class="section-intro">Use the command line to link a repository and start tracking DevFlow browser exercises for that project.</p>';
  stat.innerHTML=[['COMPLETED DRILLS',tracked.length],['AVERAGE WPM',avg('wpm')],['ACCURACY',avg('accuracy')==='—'?'—':avg('accuracy')+'%']].map(([a,b])=>`<div class="insight-stat"><span>${a}</span><strong>${b}</strong></div>`).join('');
  table.innerHTML=past.length?`<table class="list-table"><thead><tr><th>DATE</th><th>REPOSITORY</th><th>DRILLS</th><th>WPM</th><th>ACCURACY</th></tr></thead><tbody>${past.slice(-30).reverse().map(x=>`<tr><td>${esc(formatDate(x.endedAt||x.startedAt))}</td><td>${esc(x.repo?.name||'Unknown')}</td><td>${Number(x.drills)||0}</td><td>${x.wpm===null?'—':Number(x.wpm).toFixed(1)}</td><td>${x.accuracy===null?'—':Number(x.accuracy).toFixed(1)+'%'}</td></tr>`).join('')}</tbody></table>`:'<div class="list-empty">No completed repository sessions yet. Run <code>devflow start</code>, finish some drills, and run <code>devflow stop</code>.</div>';
+ trendGraph($('project-wpm-chart'),past,'wpm','Average WPM');trendGraph($('project-accuracy-chart'),past,'accuracy','Average accuracy');
  const history=state.history.filter(x=>x.projectId);$('project-drills').innerHTML=history.length?`<table class="list-table"><thead><tr><th>DATE</th><th>REPOSITORY</th><th>EXERCISE</th><th>WPM</th><th>ACCURACY</th></tr></thead><tbody>${history.slice(-25).reverse().map(x=>`<tr><td>${esc(formatDate(x.date))}</td><td>${esc(x.project||'Repo')}</td><td>${esc(x.title||x.kind)}</td><td>${Number(x.wpm).toFixed(1)}</td><td>${Number(x.accuracy).toFixed(1)}%</td></tr>`).join('')}</tbody></table>`:'<div class="list-empty">Repo-linked drills appear here automatically.</div>';
 }
 function renderSettings(){
