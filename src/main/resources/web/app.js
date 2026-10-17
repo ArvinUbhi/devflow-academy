@@ -7,7 +7,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const formatDate = iso => new Date(iso).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
 const nowISO = () => new Date().toISOString();
 const round = E.round1;
-const titleFor = name => ({dashboard:'Overview',academy:'Typing academy',lab:'Code lab',editor:'Editor gym',handicap:'Typing handicap',insights:'Insights',projects:'Projects',settings:'Settings'})[name];
+const titleFor = name => ({dashboard:'Overview',academy:'Typing academy',lab:'Code lab',editor:'Editor gym',handicap:'Typing handicap',insights:'Insights',projects:'Projects',settings:'Settings',daily:'Daily flow',java:'Java path',intellij:'IntelliJ IDEA'})[name];
 
 const LESSONS = [
  {title:'Meet your home row',focus:'A S D F · J K L ;',level:'FOUNDATION',time:'3 min',guide:'Place your index fingers on F and J (the raised bumps). Keep wrists neutral. Always return your fingers home. Type slowly with the correct fingers.',target:'asdf jkl; asdf jkl; fj fj dk dk sl sl a; a; f j d k s l'},
@@ -68,6 +68,7 @@ const BENCHMARKS = [
 ];
 const LANGUAGES = ['All','Java','Python','JavaScript','C#','SQL'];
 let state = E.defaultState();
+let experience = null;
 let currentView = 'dashboard';
 let filter = 'All';
 let training = null;
@@ -116,6 +117,7 @@ function toast(message) {
 function go(view) {
   if (training) leaveTraining();
   if (!titleFor(view)) return;
+  experience?.cancel();
   currentView=view;
   $$('.view').forEach(node=>node.classList.toggle('active-view',node.id==='view-'+view));
   $$('.nav-item').forEach(node=>node.classList.toggle('active',node.dataset.view===view));
@@ -128,8 +130,8 @@ function go(view) {
 }
 function dataStats() {
   const history=state.history;
-  const recent=history.slice(-20);
-  const code=history.filter(x=>x.kind==='code');
+  const recent=history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-20);
+  const code=history.filter(x=>['code','java-type','daily'].includes(x.kind));
   return {speed:code.length?Math.max(...code.map(x=>x.wpm)):null, accuracy:recent.length?round(recent.reduce((a,x)=>a+x.accuracy,0)/recent.length):null, count:history.length, minutes:Math.round(history.reduce((a,x)=>a+Number(x.seconds||0),0)/60), index:E.handicapIndex(state.rounds)};
 }
 function topWeak(n=5){return Object.entries(state.weak).sort((a,b)=>b[1]-a[1]).slice(0,n);}
@@ -160,7 +162,7 @@ function renderDashboard(){
  const mastered=LESSONS.filter(x=>state.mastered[x.id]).length;
  $('mastered-count').textContent=`${mastered} / ${LESSONS.length}`;
  $('lesson-progress-bar').style.width=100*mastered/LESSONS.length+'%';
- barChart($('mini-chart'),state.history.slice(-7));
+ barChart($('mini-chart'),state.history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-7));
  $('progress-headline').textContent=ds.count?`${ds.count} completed session${ds.count!==1?'s':''}`:'Your journey starts here';
  $('progress-description').textContent=ds.count?`${ds.minutes} minutes of focused training so far.`:'Complete a practice session to establish your baseline.';
 }
@@ -187,7 +189,7 @@ function renderHandicap(){
  $('rounds-history').innerHTML=state.rounds.length?`<table class="list-table"><thead><tr><th>DATE</th><th>ROUND SCORE</th><th>CLASSIFICATION</th></tr></thead><tbody>${state.rounds.slice().reverse().map(r=>`<tr><td>${esc(formatDate(r.date))}</td><td>${Number(r.score).toFixed(1)}</td><td>${esc(E.tier(r.score))}</td></tr>`).join('')}</tbody></table>`:'<div class="list-empty">Your first benchmark is ready whenever you are.</div>';
 }
 function renderInsights(){
- const ds=dataStats(); const latest=state.history.filter(x=>x.kind!=='edit').slice(-12);
+ const ds=dataStats(); const latest=state.history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-12);
  const cards=[['COMPLETED SESSIONS',ds.count,'Sessions recorded'],['PRACTICE TIME',ds.minutes+'m','Minutes on keyboard'],['AVERAGE ACCURACY',ds.accuracy===null?'—':ds.accuracy+'%','Recent 20 sessions'],['CURRENT HANDICAP',ds.index===null?'—':ds.index.toFixed(1),'Lower is better']];
  $('insight-stats').innerHTML=cards.map(x=>`<div class="insight-stat"><span>${x[0]}</span><strong>${x[1]}</strong><small>${x[2]}</small></div>`).join('');
  barChart($('speed-chart'),latest,{big:true});
@@ -229,7 +231,7 @@ function renderSettings(){
  $('setting-wpm').value=state.settings.goalWpm;
  $('setting-keyboard').checked=state.settings.showKeyboard;
 }
-function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();}
+function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();experience?.render();}
 
 function weakTarget() {
  const focus = topWeak(3).map(([k])=>k.toLowerCase());
@@ -239,6 +241,7 @@ function weakTarget() {
  return Array.from({length:4},()=>list.join(' ')).join('\n');
 }
 function startDaily() {
+ experience?.cancel();
  const starter=nextLesson();
  const nextCode=LABS.find(l=>l.language===state.settings.language)||LABS[0];
  const warmup={...starter,target:[starter.target,starter.target,starter.target].join('\n')};
@@ -257,7 +260,10 @@ function runTyping(item, kind, assessmentIndex=null, fromDaily=false) {
  if(!fromDaily) dailyPlan=null;
  leaveTraining(fromDaily);
  training={item,kind,assessmentIndex,dailyIndex:fromDaily&&dailyPlan?dailyPlan.index:null,text:'',errors:0,attempts:0,start:null,intervals:[],lastKeyTime:null,intervalTimer:null};
+ $('trainer-learning').classList.add('hidden');
+ $('finish-share').classList.add('hidden');
  $('training-overlay').classList.remove('hidden');
+ document.querySelector('.app-shell')?.setAttribute('inert','');
  $('trainer-typing').classList.remove('hidden'); $('trainer-editor').classList.add('hidden'); $('trainer-finish').classList.add('hidden');
  $('trainer-eyebrow').textContent=kind==='lesson'?'ACADEMY · '+item.level:kind==='drill'?'TARGETED COACHING':kind==='code'?item.language.toUpperCase()+' · '+item.difficulty:'OFFICIAL BENCHMARK · SEGMENT '+(assessmentIndex+1)+' / 3';
  $('training-counter').textContent=kind==='assessment'?'HANDICAP ROUND · '+(assessmentIndex+1)+'/3':kind==='lesson'?'FOCUSED PRACTICE':kind==='drill'?'WEAK SPOT WORKOUT':'DEVELOPER CODE LAB';
@@ -274,7 +280,9 @@ function runTyping(item, kind, assessmentIndex=null, fromDaily=false) {
 function runEditor(item){
  leaveTraining();
  training={item,kind:'edit',start:null,keystrokes:0,errors:0};
- $('training-overlay').classList.remove('hidden'); $('trainer-typing').classList.add('hidden');$('trainer-editor').classList.remove('hidden');$('trainer-finish').classList.add('hidden');
+ $('trainer-learning').classList.add('hidden');$('finish-share').classList.add('hidden');
+ $('training-overlay').classList.remove('hidden');
+ document.querySelector('.app-shell')?.setAttribute('inert',''); $('trainer-typing').classList.add('hidden');$('trainer-editor').classList.remove('hidden');$('trainer-finish').classList.add('hidden');
  $('training-counter').textContent='EDITOR GYM · '+item.language.toUpperCase();
  $('editor-eyebrow').textContent=item.language.toUpperCase()+' · '+item.difficulty;
  $('editor-title').textContent=item.title;
@@ -287,6 +295,7 @@ function runEditor(item){
  setTimeout(()=>$('editor-input').focus(),80);
 }
 function startAssessment(index=0,results=[]){
+ experience?.cancel();
  const item=BENCHMARKS[index];
  runTyping(item,'assessment',index);
  training.assessmentResults=results;
@@ -296,30 +305,34 @@ function leaveTraining(preserveDaily=false){
  if (liveTicker) {clearInterval(liveTicker);liveTicker=null;}
  training=null;
  $('training-overlay').classList.add('hidden');
+ document.querySelector('.app-shell')?.removeAttribute('inert');
 }
 function computeLive(){
- if (!training||training.kind==='edit') return null;
+ if (!training||training.kind==='edit'||!training.item) return null;
  const correct=Array.from(training.text).reduce((n,ch,i)=>n+(ch===training.item.target[i]?1:0),0);
  const seconds=training.start?Math.max(.2,(performance.now()-training.start)/1000):0;
  return {wpm:E.wpm(correct,seconds),accuracy:E.accuracy(training.attempts,training.errors),rhythm:E.rhythm(training.intervals),seconds,errors:training.errors,correct};
 }
 function keyFinger(char){
  const map={q:'LEFT PINKY',a:'LEFT PINKY',z:'LEFT PINKY',w:'LEFT RING',s:'LEFT RING',x:'LEFT RING',e:'LEFT MIDDLE',d:'LEFT MIDDLE',c:'LEFT MIDDLE',r:'LEFT INDEX',t:'LEFT INDEX',f:'LEFT INDEX',g:'LEFT INDEX',v:'LEFT INDEX',b:'LEFT INDEX',y:'RIGHT INDEX',u:'RIGHT INDEX',h:'RIGHT INDEX',j:'RIGHT INDEX',n:'RIGHT INDEX',m:'RIGHT INDEX',i:'RIGHT MIDDLE',k:'RIGHT MIDDLE',',':'RIGHT MIDDLE',o:'RIGHT RING',l:'RIGHT RING','.':'RIGHT RING',p:'RIGHT PINKY',';':'RIGHT PINKY','/':'RIGHT PINKY',' ':'THUMB','\n':'RIGHT PINKY'};
- return map[char.toLowerCase()]||'CHECK SYMBOL POSITION';
+ const physical=window.DevFlowChallenge.keyboardKey(char,state.settings.layout).key.toLowerCase();
+ const digits={'1':'LEFT PINKY','2':'LEFT RING','3':'LEFT MIDDLE','4':'LEFT INDEX','5':'LEFT INDEX','6':'RIGHT INDEX','7':'RIGHT INDEX','8':'RIGHT MIDDLE','9':'RIGHT RING','0':'RIGHT PINKY'};
+ return map[char.toLowerCase()]||map[physical]||digits[physical]||'RIGHT PINKY';
 }
 function keyName(char){
  if(char===' ')return 'SPACE';if(char==='\n')return 'ENTER';if(char==='\t')return 'TAB';return char.toUpperCase();
 }
 function renderKeyboard(next){
- const rows=['QWERTYUIOP','ASDFGHJKL;','ZXCVBNM,./'];
- const extra=next===' ' ? 'SPACE' : next==='\n' ? 'ENTER' : next.toUpperCase();
- let keys=rows.map((r,i)=>`<div class="kb-row">${Array.from(r).map(x=>`<div class="keycap ${i===1?'home':''} ${x===extra?'active':''}">${esc(x)}</div>`).join('')}</div>`).join('');
- keys+=`<div class="kb-row"><div class="keycap space ${extra==='SPACE'?'active':''}">SPACE</div><div class="keycap ${extra==='ENTER'?'active':''}">↵</div></div>`;
+ const physical=window.DevFlowChallenge.keyboardKey(next,state.settings.layout);
+ const rows=['`1234567890-=','QWERTYUIOP[]'+String.fromCharCode(92),'ASDFGHJKL;'+String.fromCharCode(39)+(state.settings.layout==='UK-QWERTY'?'#':''),'ZXCVBNM,./'];
+ let keys=rows.map((r,i)=>`<div class="kb-row">${Array.from(r).map(x=>`<div class="keycap ${i===2?'home':''} ${x===physical.key?'active':''}">${esc(x)}</div>`).join('')}</div>`).join('');
+ keys+=`<div class="kb-row"><div class="keycap ${physical.shift?'active':''}">Shift</div><div class="keycap space ${physical.key==='SPACE'?'active':''}">SPACE</div><div class="keycap ${physical.key==='ENTER'?'active':''}">↵</div></div>`;
  $('virtual-keyboard').innerHTML=keys;
- $('next-key-label').textContent='NEXT · '+keyName(next||'')+' · '+keyFinger(next||' ');
+ $('next-key-label').textContent='NEXT · '+keyName(next||'')+(physical.shift?' · SHIFT + '+physical.key:'')+' · '+keyFinger(next||' ');
 }
+
 function updateTypingDisplay(){
- if(!training||training.kind==='edit')return;
+ if(!training||training.kind==='edit'||!training.item)return;
  const item=training.item,typed=training.text;
  const chars=Array.from(item.target);
  const html=chars.map((char,i)=>{
@@ -327,6 +340,8 @@ function updateTypingDisplay(){
   return `<span class="${cl}">${esc(char)}</span>`;
  }).join('');
  $('typing-prompt').innerHTML=html;
+ const caret=$('typing-prompt').querySelector?.('.prompt-current');
+ caret?.scrollIntoView?.({block:'nearest'});
  $('typing-progress').textContent=`${Math.min(100,Math.floor((typed.length/item.target.length)*100))}%`;
  const stats=computeLive();
  $('live-wpm').textContent=round(stats.wpm);
@@ -337,16 +352,16 @@ function updateTypingDisplay(){
  if (state.settings.showKeyboard)renderKeyboard(item.target[typed.length]||'');
 }
 function captureInput(value){
- if(!training||training.kind==='edit')return;
+ if(!training||training.kind==='edit'||!training.item)return;
  const t=training;
  if(value.length>t.item.target.length){$('typing-capture').value=t.text;return;}
  if(!t.start&&value.length){t.start=performance.now();liveTicker=setInterval(updateTypingDisplay,500);}
- if(value.length>t.text.length){
+ const changes=window.DevFlowChallenge.changedInput(t.text,value,t.item.target);
+ if(changes.length){
    const instant=performance.now();
-   for(let i=t.text.length;i<value.length;i++){
+   for(const change of changes){
      t.attempts++;
-     const expected=t.item.target[i];
-     if(value[i]!==expected){t.errors++;state.weak[expected]=(state.weak[expected]||0)+1;}
+     if(change.error){t.errors++;if(change.expected)state.weak[change.expected]=(state.weak[change.expected]||0)+1;}
      if(t.lastKeyTime!==null)t.intervals.push(instant-t.lastKeyTime);
      t.lastKeyTime=instant;
    }
@@ -360,6 +375,7 @@ function finishTyping(){
  const stats=computeLive();
  if(liveTicker){clearInterval(liveTicker);liveTicker=null;}
  const result={date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,wpm:stats.wpm,accuracy:stats.accuracy,rhythm:stats.rhythm,errors:stats.errors,seconds:round(stats.seconds),...projectTags()};
+ if(experience?.complete(t,result)){renderAll();return;}
  if(t.kind==='lesson'){
    if(stats.accuracy>=94)state.mastered[t.item.id]=true;
    state.history.push(result);
@@ -405,12 +421,14 @@ function coachFeedback(s){
 }
 function showFinish({eyebrow,title,description,stats,coaching,next,nextLabel}){
  if(!training)return;
+ $('trainer-learning').classList.add('hidden');$('finish-share').classList.add('hidden');
  training.finishNext=next;
  $('trainer-typing').classList.add('hidden');$('trainer-editor').classList.add('hidden');$('trainer-finish').classList.remove('hidden');
  $('finish-eyebrow').textContent=eyebrow;$('finish-title').textContent=title;$('finish-description').textContent=description;
  $('finish-stats').innerHTML=[['EFFECTIVE WPM',round(stats.wpm)],['ACCURACY',round(stats.accuracy)+'%'],['TOTAL TIME',Math.round(stats.seconds)+'s']].map(([label,value])=>`<div class="finish-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
  $('finish-coaching').textContent='✦ COACH NOTES · '+coaching;
  $('finish-next').textContent=nextLabel;
+ $('finish-next').focus();
  window.scrollTo(0,0);
 }
 function checkEditor(){
@@ -427,27 +445,29 @@ function checkEditor(){
  const seconds=Math.max(.2,(performance.now()-(t.start||performance.now()))/1000);
  const edits=t.keystrokes||1;
  const stats={date:nowISO(),id:t.item.id,kind:'edit',title:t.item.title,wpm:E.wpm(edits,seconds),accuracy:E.accuracy(edits+t.errors,t.errors),rhythm:0,errors:t.errors,seconds:round(seconds),...projectTags()};
+ if(experience?.complete(t,stats)){renderAll();return;}
  state.history.push(stats);saveState();renderAll();
  const next=EDITS[(EDITS.findIndex(e=>e.id===t.item.id)+1)%EDITS.length];
  showFinish({eyebrow:'EDITOR CHALLENGE SOLVED',title:'Bug fixed. Nicely done.',description:'You completed the edit with your keyboard.',stats,coaching:'Try finishing the next edit with fewer keystrokes and more keyboard navigation. Editor speeds are not included in official handicap ratings.',next:()=>runEditor(next),nextLabel:'Next editor task →'});
 }
 function setupActions(){
  document.addEventListener('click',ev=>{
+  const flow=ev.target.closest('[data-flow]');if(flow)return;
   const nav=ev.target.closest('[data-view]');if(nav){go(nav.dataset.view);return;}
   const goto=ev.target.closest('[data-go]');if(goto){go(goto.dataset.go);return;}
   const action=ev.target.closest('[data-action]');if(action&&action.dataset.action==='assessment'){startAssessment();return;}
-  const lesson=ev.target.closest('[data-lesson]');if(lesson){const l=LESSONS.find(x=>x.id===lesson.dataset.lesson);if(l)runTyping(l,'lesson');return;}
-  const lab=ev.target.closest('[data-lab]');if(lab){const l=LABS.find(x=>x.id===lab.dataset.lab);if(l)runTyping(l,'code');return;}
-  const edit=ev.target.closest('[data-edit]');if(edit){const l=EDITS.find(x=>x.id===edit.dataset.edit);if(l)runEditor(l);return;}
+  const lesson=ev.target.closest('[data-lesson]');if(lesson){const l=LESSONS.find(x=>x.id===lesson.dataset.lesson);if(l){experience?.cancel();runTyping(l,'lesson');};return;}
+  const lab=ev.target.closest('[data-lab]');if(lab){const l=LABS.find(x=>x.id===lab.dataset.lab);if(l){experience?.cancel();runTyping(l,'code');};return;}
+  const edit=ev.target.closest('[data-edit]');if(edit){const l=EDITS.find(x=>x.id===edit.dataset.edit);if(l){experience?.cancel();runEditor(l);};return;}
   const filt=ev.target.closest('[data-filter]');if(filt){filter=filt.dataset.filter;renderLab();}
  });
  $('menu-toggle').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
  $('start-daily').addEventListener('click',startDaily);
  $('side-practice').addEventListener('click',startDaily);
- $('exit-training').addEventListener('click',()=>{leaveTraining();renderAll();});
+ $('exit-training').addEventListener('click',()=>{leaveTraining();experience?.cancel();renderAll();});
  $('finish-exit').addEventListener('click',()=>{leaveTraining();go('dashboard');renderAll();});
  $('finish-next').addEventListener('click',()=>{if(training&&training.finishNext)training.finishNext();});
- $('restart-training').addEventListener('click',()=>{if(training)runTyping(training.item,training.kind,training.assessmentIndex,training.dailyIndex!==null);});
+ $('restart-training').addEventListener('click',()=>{if(training&&training.item){const t=training;runTyping(t.item,t.kind,t.assessmentIndex,t.dailyIndex!==null);training.assessmentResults=t.assessmentResults;}});
  $('typing-card').addEventListener('click',()=>$('typing-capture').focus());
  $('typing-card').addEventListener('keydown',e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();$('typing-capture').focus();}});
  $('typing-capture').addEventListener('paste',e=>{e.preventDefault();toast('Paste is disabled — train the movements, not your clipboard.');});
@@ -467,7 +487,7 @@ function setupActions(){
    if(e.key==='Tab'){e.preventDefault();const node=e.target,start=node.selectionStart,end=node.selectionEnd;node.value=node.value.slice(0,start)+'    '+node.value.slice(end);node.selectionStart=node.selectionEnd=start+4;node.dispatchEvent(new Event('input',{bubbles:true}));}
  });
  $('check-edit').addEventListener('click',checkEditor);
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&training){leaveTraining();renderAll();}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.defaultPrevented&&training){leaveTraining();renderAll();}});
  $('preferences-form').addEventListener('submit',async e=>{
    e.preventDefault();
    state.settings={name:$('setting-name').value.trim()||'Developer',language:$('setting-language').value,layout:$('setting-layout').value,minutes:Number($('setting-minutes').value),goalWpm:Number($('setting-wpm').value),showKeyboard:$('setting-keyboard').checked};
@@ -479,7 +499,7 @@ function setupActions(){
  });
  $('import-file').addEventListener('change',async e=>{
   const file=e.target.files&&e.target.files[0];if(!file)return;
-  try{const imported=JSON.parse(await file.text());if(!imported||imported.version!==1||!Array.isArray(imported.history))throw Error('Unsupported progress file');state=E.sanitizeState(imported);await saveState();await refreshProject();renderAll();toast('Progress imported successfully');}
+  try{const imported=JSON.parse(await file.text());if(!imported||![1,2].includes(imported.version)||!Array.isArray(imported.history))throw Error('Unsupported progress file');state=E.sanitizeState(imported);await saveState();await refreshProject();renderAll();toast('Progress imported successfully');}
   catch(err){toast('Import failed: '+err.message);}
   e.target.value='';
  });
@@ -488,6 +508,7 @@ function setupActions(){
   state=E.defaultState();await saveState();renderAll();toast('Progress reset');
  });
 }
+experience=window.DevFlowExperience.create({state:()=>state,save:saveState,notify:toast,go,leave:leaveTraining,type:runTyping,edit:runEditor,finish:showFinish,result:opts=>{training={kind:'result'};showFinish(opts);}});
 setupActions();
 loadState();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});

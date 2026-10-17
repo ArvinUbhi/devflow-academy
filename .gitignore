@@ -2,3 +2,7 @@ build/
 node_modules/
 *.log
 .DS_Store
+
+intellij-plugin/.gradle/
+intellij-plugin/.intellijPlatform/
+intellij-plugin/build/

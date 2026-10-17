@@ -1,13 +1,26 @@
 # devflow.
 
-**A Java 8-compatible typing academy for software engineers.** Master touch typing, train in Java/Python/JavaScript/C#/SQL, develop editor fluency, improve a golf-inspired Typing Handicap, and track project-linked practice in the local CLI.
+**A Java 8-compatible Java and typing academy for software engineers.** Master touch typing, train in Java/Python/JavaScript/C#/SQL, develop editor fluency, improve a golf-inspired Typing Handicap, and track project-linked practice in the local CLI.
+
+## New in v2
+
+- **Daily Flow:** three short Java typing rounds and a comprehension check. Identical, versioned prompts for each UTC date, weighted accuracy/pace scoring, reload-and-resume and a saved first finish. Replays are practice and cannot replace that day's result.
+- **Score sharing:** spoiler-free Wordle-style tiles, native sharing or clipboard copy, a manual-copy fallback, and downloadable SVG score cards. Sharing is always initiated by the user.
+- **24 Java lessons:** learn the concept, type a working example, recall a small pattern without copying, and explain the behaviour. Covers fundamentals, flow control, collections, objects, reliability and Java 8 streams/lambdas.
+- **Real mastery:** at least 94% typing accuracy, unassisted recall and a correct first comprehension answer. Hints support learning; spaced reviews return after 1–14 days.
+- **IntelliJ plugin:** the full app inside a tool window, bundled local server, shared local progress, automatic startup, browser fallback and proper process/browser disposal. See [installation](intellij-plugin/README.md).
+- **Deliberate practice UX:** a focused daily entry point, Java chapter filters, practice streaks, earned XP, keyboard focus states, reduced-motion support and UK/US symbol-key guidance.
+
+Touch typing still comes first: the 16 foundation lessons, multilingual code lab, Editor Gym, Typing Handicap, insights and repo-linked CLI are retained. Existing v1 progress migrates automatically, and v1/v2 backups can both be imported.
+
+Download the [installable IntelliJ plugin ZIP](downloads/devflow-intellij-2.0.0.zip), or run the standalone app below.
 
 ## Run in one command
 
 With Java 8+ on your PATH and Node 22 installed:
 
 ```sh
-npx --yes github:ArvinUbhi/devflow-academy
+npx --yes github:ArvinUbhi/devflow-academy#devflow-v2-java-daily-intellij
 ```
 
 This runs the bundled Java executable and opens the DevFlow web app locally at `http://127.0.0.1:8765`. `Ctrl+C` stops a foreground launch. No Java build tools, database, cloud account or npm build are needed to **run** the project. It runs locally from any OS with Java, Node and npm available. It is not a hosted public service.
@@ -19,7 +32,7 @@ Alternative: download `devflow.jar` from the repository and run `java -jar devfl
 Install the command once (requires Git, Node 22 and Java 8+):
 
 ```sh
-npm install -g github:ArvinUbhi/devflow-academy
+npm install -g github:ArvinUbhi/devflow-academy#devflow-v2-java-daily-intellij
 cd /path/to/your/git/repo
 devflow init
 devflow start
@@ -28,7 +41,7 @@ devflow stop
 devflow history
 ```
 
-Or call each command without installing globally: `npx --yes github:ArvinUbhi/devflow-academy start`.
+Or call each command without installing globally: `npx --yes github:ArvinUbhi/devflow-academy#devflow-v2-java-daily-intellij start`.
 
 - `devflow init [--repo PATH]` links a local Git repository by resolving its root. Git remote metadata is captured if available. It does **not** commit changes to that repository.
 - `devflow start [--repo PATH] [--no-browser]` starts the Java web UI in the background and associates completed **DevFlow drills** with the linked repository.
@@ -37,7 +50,7 @@ Or call each command without installing globally: `npx --yes github:ArvinUbhi/de
 - `devflow history [--json]` shows historical repo-linked sessions.
 - `devflow serve` launches without repo tracking. `devflow --help` lists commands.
 
-**Scope and accuracy:** Typing statistics are measured when you complete an exercise inside the DevFlow browser UI. Linking a repo identifies the session, but does **not** spy on system-wide keystrokes, access source files, or measure typing in VS Code, IntelliJ or terminals. That requires an optional editor integration, which is not part of this release. Idle time and uncompleted exercises do not count as completed drills. Editing challenges' WPM is an approximate editing-efficiency measure, not equivalent to character transcription WPM.
+**Scope and accuracy:** Typing statistics are measured when you complete an exercise inside the DevFlow browser UI. Linking a repo identifies the session, but does **not** spy on system-wide keystrokes, access source files, or measure typing in VS Code, IntelliJ or terminals. The included IntelliJ integration brings these practice fields into the IDE; it does not monitor everyday coding. Idle time and uncompleted exercises do not count as completed drills. Editing challenges' WPM is an approximate editing-efficiency measure, not equivalent to character transcription WPM.
 
 ## Features
 
@@ -47,7 +60,7 @@ Or call each command without installing globally: `npx --yes github:ArvinUbhi/de
 - Personalized weak-key drills and guided daily training.
 - Three-part official typing handicap assessments with rolling best-3-of-8 index (0 best, 54 worst).
 - Dark responsive interface with dashboards, speed charts, accuracy, activity history and repo-linked activity.
-- Local JSON progress (up to 10,000 recent drills) and repository-session history (up to 10,000 sessions), with manual backup/export and restore.
+- Local JSON progress (up to 10,000 recent drills, 1,000 daily results and 24 Java mastery records) and repository-session history (up to 10,000 sessions), with manual backup/export and restore.
 - No external resources at runtime. Content stays on the device running Java.
 
 ### How handicap is calculated
@@ -70,6 +83,7 @@ The bundled `devflow.jar` runs on Java **8+**. Rebuilding requires **JDK 9+** (f
 
 ```sh
 sh build.sh
+npm ci
 npm test
 ```
 
@@ -80,3 +94,17 @@ You can also launch with `./run.sh` on Linux/macOS or `run.bat` on Windows.
 ## MIT License
 
 See [LICENSE](LICENSE).
+
+## Daily scores
+
+Each daily runs on a UTC date and uses the same three prompts regardless of skill level or timezone. The score is out of 1,000: 600 points for typing accuracy, 300 for pace (capped at 100 WPM), and 100 for a correct first Java answer. Overall WPM weights typed characters by total elapsed typing time, rather than averaging stage speeds. The timer begins on the first key; breaks within a round remain part of that round's elapsed time.
+
+Each tile row summarises one round's accuracy: more green squares mean fewer corrections. Tiles do not reveal Java answers. A first completed result is stored for that date; additional finishes are marked practice. Completed rounds and the first Java answer survive a reload. You may restart an unfinished typing round. The curriculum rotates across 24 concepts, with a changing warm-up value.
+
+Scores and streaks are local and self-reported. There is no global leaderboard, account, server-side anti-cheat or cross-device sync in this release. Friends can compare the same daily number by sharing their cards. Normal editor work and Editor Gym estimates do not count as daily typing speeds.
+
+## Verification
+
+`npm test` checks scoring and migration, input correction metrics, UK/US symbol guidance, CLI lifecycle, HTTP persistence and complete DOM interactions for the daily/Java/sharing flows. It also compiles all 24 teaching examples with `--release 8` and runs them to verify their documented output. The interface example is a complete program; other examples are snippets inside a `main` method with standard library imports.
+
+The IntelliJ workflow compiles and packages the plugin against the pinned SDK. A successful build alone does not establish interactive JCEF behaviour on every OS; that is a separate IDE smoke test. See [plugin verification notes](intellij-plugin/README.md).

@@ -4,3 +4,6 @@ build/
 tests/
 *.zip
 *.tgz
+
+intellij-plugin/
+node_modules/

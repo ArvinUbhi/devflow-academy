@@ -1,0 +1,25 @@
+<idea-plugin>
+  <id>com.devflow.academy</id>
+  <name>DevFlow - Java &amp; Typing Academy</name>
+  <vendor url="https://github.com/ArvinUbhi/devflow-academy">DevFlow</vendor>
+  <description><![CDATA[
+    Build typing fluency and Java understanding inside your IDE.
+    Includes 24 Java lessons, active recall, daily score cards, a touch-typing academy,
+    IntelliJ shortcut coaching and a golf-inspired typing handicap.
+    Runs locally with no account, telemetry or source-code capture.
+  ]]></description>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.jcef</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService serviceImplementation="com.devflow.intellij.DevFlowRuntime"/>
+    <toolWindow id="DevFlow" anchor="right" icon="/icons/devflow.svg"
+                factoryClass="com.devflow.intellij.DevFlowToolWindowFactory"/>
+  </extensions>
+  <actions>
+    <action id="DevFlow.Open" class="com.devflow.intellij.OpenDevFlowAction"
+            text="DevFlow: Daily Java &amp; Typing Practice"
+            description="Open your daily challenge and Java learning path">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+  </actions>
+</idea-plugin>

@@ -20,7 +20,11 @@ test('standalone jar serves UI, health and persists state safely',async t=>{
  const home=await mkdtemp(join(tmpdir(),'devflow-test-'));
  const {child,url}=await launch(home);
  t.after(async()=>{child.kill('SIGTERM');await rm(home,{recursive:true,force:true});});
- const health=await fetch(url+'/api/health'); assert.equal(health.status,200);assert.equal((await health.json()).ok,true);
+ const health=await fetch(url+'/api/health'); assert.equal(health.status,200);const healthInfo=await health.json();assert.equal(healthInfo.ok,true);assert.equal(healthInfo.version,'2.0.0');
+ for(const file of ['app.js','engine.js','curriculum.js','challenge.js','experience.js','styles.css']){
+  const served=await fetch(url+'/'+file);assert.equal(served.status,200,file);
+  assert.equal(await served.text(),await readFile(new URL('../src/main/resources/web/'+file,import.meta.url),'utf8'),'bundled resource must match source: '+file);
+ }
  const ui=await fetch(url+'/');assert.equal(ui.status,200);assert.match(await ui.text(),/Developer Typing Academy/);
  const engine=await fetch(url+'/engine.js');assert.equal(engine.status,200);assert.match(await engine.text(),/segmentHandicap/);
  assert.equal((await (await fetch(url+'/api/state')).text()),'null');
