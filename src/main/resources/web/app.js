@@ -7,7 +7,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const formatDate = iso => new Date(iso).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
 const nowISO = () => new Date().toISOString();
 const round = E.round1;
-const titleFor = name => ({dashboard:'Overview',academy:'Typing academy',lab:'Code lab',editor:'Editor gym',handicap:'Typing handicap',insights:'Insights',projects:'Projects',settings:'Settings',daily:'Daily flow',java:'Java path',intellij:'IntelliJ IDEA'})[name];
+const titleFor = name => ({dashboard:'Overview',academy:'Typing academy',lab:'Code lab',editor:'Editor gym',handicap:'Typing handicap',insights:'Insights',projects:'Projects',settings:'Settings',daily:'Daily flow',java:'Java path',practice:'Practice studio',intellij:'IntelliJ IDEA'})[name];
 
 const LESSONS = [
  {title:'Meet your home row',focus:'A S D F · J K L ;',level:'FOUNDATION',time:'3 min',guide:'Place your index fingers on F and J (the raised bumps). Keep wrists neutral. Always return your fingers home. Type slowly with the correct fingers.',target:'asdf jkl; asdf jkl; fj fj dk dk sl sl a; a; f j d k s l'},
@@ -72,7 +72,7 @@ let experience = null;
 let currentView = 'dashboard';
 let filter = 'All';
 let training = null;
-let pendingSave = Promise.resolve();
+let persistence;
 let toastTimer = null;
 let liveTicker = null;
 let dailyPlan = null;
@@ -81,32 +81,13 @@ function projectTags() { const a=projectInfo.active;return a && a.repo ? {sessio
 async function refreshProject(){try{const res=await fetch('/api/project');if(res.ok)projectInfo=await res.json();}catch{}renderProjects();}
 
 async function loadState() {
-  try {
-    const response = await fetch('/api/state');
-    if (!response.ok) throw new Error('Unable to access local progress');
-    state = E.sanitizeState(await response.json());
-  } catch (e) {
-    try { state = E.sanitizeState(JSON.parse(localStorage.getItem('devflow-fallback'))); }
-    catch { state = E.defaultState(); }
-    toast('Offline storage fallback in use; progress will stay in this browser');
-  }
+  await persistence.load();
   await refreshProject();
   renderAll();
 }
-function saveState() {
+function saveState(options) {
   state = E.sanitizeState(state);
-  const payload = JSON.stringify(state);
-  pendingSave = pendingSave.catch(()=>{}).then(async () => {
-    try {
-      const res = await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:payload});
-      if (!res.ok) throw new Error('Unable to save');
-      localStorage.setItem('devflow-fallback',payload);
-    } catch (error) {
-      localStorage.setItem('devflow-fallback',payload);
-      toast('Saved to this browser only — Java server unavailable');
-    }
-  });
-  return pendingSave;
+  return persistence.save(options);
 }
 function toast(message) {
   $('toast').textContent=message;
@@ -130,7 +111,7 @@ function go(view) {
 }
 function dataStats() {
   const history=state.history;
-  const recent=history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-20);
+  const recent=history.filter(x=>!['edit','java-recall','debug'].includes(x.kind)).slice(-20);
   const code=history.filter(x=>['code','java-type','daily'].includes(x.kind));
   return {speed:code.length?Math.max(...code.map(x=>x.wpm)):null, accuracy:recent.length?round(recent.reduce((a,x)=>a+x.accuracy,0)/recent.length):null, count:history.length, minutes:Math.round(history.reduce((a,x)=>a+Number(x.seconds||0),0)/60), index:E.handicapIndex(state.rounds)};
 }
@@ -162,7 +143,7 @@ function renderDashboard(){
  const mastered=LESSONS.filter(x=>state.mastered[x.id]).length;
  $('mastered-count').textContent=`${mastered} / ${LESSONS.length}`;
  $('lesson-progress-bar').style.width=100*mastered/LESSONS.length+'%';
- barChart($('mini-chart'),state.history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-7));
+ barChart($('mini-chart'),state.history.filter(x=>!['edit','java-recall','debug'].includes(x.kind)).slice(-7));
  $('progress-headline').textContent=ds.count?`${ds.count} completed session${ds.count!==1?'s':''}`:'Your journey starts here';
  $('progress-description').textContent=ds.count?`${ds.minutes} minutes of focused training so far.`:'Complete a practice session to establish your baseline.';
 }
@@ -189,7 +170,7 @@ function renderHandicap(){
  $('rounds-history').innerHTML=state.rounds.length?`<table class="list-table"><thead><tr><th>DATE</th><th>ROUND SCORE</th><th>CLASSIFICATION</th></tr></thead><tbody>${state.rounds.slice().reverse().map(r=>`<tr><td>${esc(formatDate(r.date))}</td><td>${Number(r.score).toFixed(1)}</td><td>${esc(E.tier(r.score))}</td></tr>`).join('')}</tbody></table>`:'<div class="list-empty">Your first benchmark is ready whenever you are.</div>';
 }
 function renderInsights(){
- const ds=dataStats(); const latest=state.history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-12);
+ const ds=dataStats(); const latest=state.history.filter(x=>!['edit','java-recall','debug'].includes(x.kind)).slice(-12);
  const cards=[['COMPLETED SESSIONS',ds.count,'Sessions recorded'],['PRACTICE TIME',ds.minutes+'m','Minutes on keyboard'],['AVERAGE ACCURACY',ds.accuracy===null?'—':ds.accuracy+'%','Recent 20 sessions'],['CURRENT HANDICAP',ds.index===null?'—':ds.index.toFixed(1),'Lower is better']];
  $('insight-stats').innerHTML=cards.map(x=>`<div class="insight-stat"><span>${x[0]}</span><strong>${x[1]}</strong><small>${x[2]}</small></div>`).join('');
  barChart($('speed-chart'),latest,{big:true});
@@ -233,13 +214,7 @@ function renderSettings(){
 }
 function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();experience?.render();}
 
-function weakTarget() {
- const focus = topWeak(3).map(([k])=>k.toLowerCase());
- const words = ['accuracy','array','access','return','string','class','function','parameter','object','index','value','variable','console','boolean','execute','exception','null','query','commit','debug','test','method','build','async','await','logic','typing','flow','keyboard','developer','syntax'];
- const relevant = words.filter(w=>focus.some(k=>w.includes(k)));
- const list = relevant.length >= 3 ? relevant : words.slice(0,14);
- return Array.from({length:4},()=>list.join(' ')).join('\n');
-}
+function weakTarget() {return window.DevFlowPractice.weakDrill(state.weak).target;}
 function startDaily() {
  experience?.cancel();
  const starter=nextLesson();
@@ -268,6 +243,7 @@ function runTyping(item, kind, assessmentIndex=null, fromDaily=false) {
  $('trainer-eyebrow').textContent=kind==='lesson'?'ACADEMY · '+item.level:kind==='drill'?'TARGETED COACHING':kind==='code'?item.language.toUpperCase()+' · '+item.difficulty:'OFFICIAL BENCHMARK · SEGMENT '+(assessmentIndex+1)+' / 3';
  $('training-counter').textContent=kind==='assessment'?'HANDICAP ROUND · '+(assessmentIndex+1)+'/3':kind==='lesson'?'FOCUSED PRACTICE':kind==='drill'?'WEAK SPOT WORKOUT':'DEVELOPER CODE LAB';
  $('training-title').textContent=item.title;
+ $('training-overlay').setAttribute('aria-labelledby','training-title');
  $('training-description').textContent=kind==='lesson'||kind==='drill'?item.guide:kind==='code'?'Reproduce the code exactly. Maintain case, indentation, whitespace and punctuation.':item.description;
  $('typing-label').textContent=kind==='assessment'?'OFFICIAL ASSESSMENT · NO PASTING':'TYPE THE TEXT BELOW';
  $('typing-capture').value='';
@@ -286,6 +262,8 @@ function runEditor(item){
  $('training-counter').textContent='EDITOR GYM · '+item.language.toUpperCase();
  $('editor-eyebrow').textContent=item.language.toUpperCase()+' · '+item.difficulty;
  $('editor-title').textContent=item.title;
+ $('training-overlay').setAttribute('aria-labelledby','editor-title');
+ $('editor-help').innerHTML='';
  $('editor-description').textContent='Use your editor navigation, selection and typing skills to make the requested change.';
  $('editor-instruction').textContent=item.instruction;
  $('editor-filename').textContent=item.file;
@@ -374,7 +352,7 @@ function finishTyping(){
  const t=training;if(!t)return;
  const stats=computeLive();
  if(liveTicker){clearInterval(liveTicker);liveTicker=null;}
- const result={date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,wpm:stats.wpm,accuracy:stats.accuracy,rhythm:stats.rhythm,errors:stats.errors,seconds:round(stats.seconds),...projectTags()};
+ const result={eventId:crypto.randomUUID(),date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,wpm:stats.wpm,accuracy:stats.accuracy,rhythm:stats.rhythm,errors:stats.errors,seconds:round(stats.seconds),...projectTags()};
  if(experience?.complete(t,result)){renderAll();return;}
  if(t.kind==='lesson'){
    if(stats.accuracy>=94)state.mastered[t.item.id]=true;
@@ -395,7 +373,7 @@ function finishTyping(){
      showFinish({eyebrow:`SEGMENT ${t.assessmentIndex+1} COMPLETE`,title:'Keep the round going.',description:`${3-results.length} segment${3-results.length===1?'':'s'} remaining until your handicap is calculated.`,stats:result,coaching:coachFeedback(result),next:()=>startAssessment(t.assessmentIndex+1,results),nextLabel:'Next segment →'});
    } else {
      const score=E.roundScore(results);
-     state.rounds.push({date:nowISO(),score,...projectTags(),segments:results.map(x=>({wpm:x.wpm,accuracy:x.accuracy,rhythm:x.rhythm}))});
+     state.rounds.push({eventId:crypto.randomUUID(),date:nowISO(),score,...projectTags(),segments:results.map(x=>({wpm:x.wpm,accuracy:x.accuracy,rhythm:x.rhythm}))});
      state.history.push(...results);
      saveState();
      showFinish({eyebrow:'OFFICIAL ROUND COMPLETE',title:`Round score: ${score.toFixed(1)}`,description:'Lower is better. Your handicap index averages the best three of your eight latest rounds.',stats:result,coaching:`Current handicap: ${E.handicapIndex(state.rounds).toFixed(1)} · ${E.tier(E.handicapIndex(state.rounds))}`,next:()=>go('handicap'),nextLabel:'View your handicap →'});
@@ -434,17 +412,17 @@ function showFinish({eyebrow,title,description,stats,coaching,next,nextLabel}){
 function checkEditor(){
  if(!training||training.kind!=='edit')return;
  const t=training, actual=$('editor-input').value.replace(/\r\n/g,'\n').trimEnd(),expected=t.item.expected.trimEnd();
- if(actual!==expected){
+ if(t.item.flexible?!window.DevFlowPractice.matchesFix(actual,expected):actual!==expected){
    const linesA=actual.split('\n'),linesB=expected.split('\n');
    const line=linesA.findIndex((l,i)=>l!==linesB[i]);
-   $('editor-feedback').textContent=`Not quite yet. Check line ${line+1}, and review the task instruction carefully.`;
+   $('editor-feedback').textContent=t.item.flexible?'Not quite yet. Check the symptom and make the smallest fix. Spacing is flexible.':`Not quite yet. Check line ${line+1}, and review the task instruction carefully.`;
    $('editor-feedback').style.color='#f4a7ad';
    t.errors++;
    return;
  }
  const seconds=Math.max(.2,(performance.now()-(t.start||performance.now()))/1000);
  const edits=t.keystrokes||1;
- const stats={date:nowISO(),id:t.item.id,kind:'edit',title:t.item.title,wpm:E.wpm(edits,seconds),accuracy:E.accuracy(edits+t.errors,t.errors),rhythm:0,errors:t.errors,seconds:round(seconds),...projectTags()};
+ const stats={eventId:crypto.randomUUID(),date:nowISO(),id:t.item.id,kind:'edit',title:t.item.title,wpm:E.wpm(edits,seconds),accuracy:E.accuracy(edits+t.errors,t.errors),rhythm:0,errors:t.errors,seconds:round(seconds),...projectTags()};
  if(experience?.complete(t,stats)){renderAll();return;}
  state.history.push(stats);saveState();renderAll();
  const next=EDITS[(EDITS.findIndex(e=>e.id===t.item.id)+1)%EDITS.length];
@@ -484,6 +462,7 @@ function setupActions(){
  $('editor-input').addEventListener('drop',e=>e.preventDefault());
  $('editor-input').addEventListener('input',()=>{if(training&&training.kind==='edit'){if(!training.start)training.start=performance.now();training.keystrokes++;$('editor-feedback').style.color='';}});
  $('editor-input').addEventListener('keydown',e=>{
+   if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();checkEditor();return;}
    if(e.key==='Tab'){e.preventDefault();const node=e.target,start=node.selectionStart,end=node.selectionEnd;node.value=node.value.slice(0,start)+'    '+node.value.slice(end);node.selectionStart=node.selectionEnd=start+4;node.dispatchEvent(new Event('input',{bubbles:true}));}
  });
  $('check-edit').addEventListener('click',checkEditor);
@@ -491,7 +470,7 @@ function setupActions(){
  $('preferences-form').addEventListener('submit',async e=>{
    e.preventDefault();
    state.settings={name:$('setting-name').value.trim()||'Developer',language:$('setting-language').value,layout:$('setting-layout').value,minutes:Number($('setting-minutes').value),goalWpm:Number($('setting-wpm').value),showKeyboard:$('setting-keyboard').checked};
-   await saveState();renderAll();$('settings-feedback').textContent='Settings saved successfully.';toast('Preferences updated');
+   const saved=await saveState();renderAll();$('settings-feedback').textContent=saved?'Settings saved on this computer.':'Browser backup saved; use the save status above to retry.';
  });
  $('export-btn').addEventListener('click',()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
@@ -499,17 +478,24 @@ function setupActions(){
  });
  $('import-file').addEventListener('change',async e=>{
   const file=e.target.files&&e.target.files[0];if(!file)return;
-  try{const imported=JSON.parse(await file.text());if(!imported||![1,2].includes(imported.version)||!Array.isArray(imported.history))throw Error('Unsupported progress file');state=E.sanitizeState(imported);await saveState();await refreshProject();renderAll();toast('Progress imported successfully');}
+  try{const imported=JSON.parse(await file.text());if(!imported||![1,2].includes(imported.version)||!Array.isArray(imported.history))throw Error('Unsupported progress file');const restored=E.sanitizeState(imported);restored.generation=state.generation;state=window.DevFlowSync.merge({...E.defaultState(),generation:state.generation},restored,state);const saved=await saveState();await refreshProject();renderAll();toast(saved?'Progress merged successfully':'Imported to browser backup; retry saving when the server is available');}
   catch(err){toast('Import failed: '+err.message);}
   e.target.value='';
  });
  $('reset-btn').addEventListener('click',async()=>{
   if(!confirm('Delete all DevFlow progress saved on this device? This cannot be undone.'))return;
-  state=E.defaultState();await saveState();renderAll();toast('Progress reset');
+  const replacement=E.defaultState();replacement.generation=crypto.randomUUID();const saved=await saveState({replace:true,replacement});renderAll();toast(saved?'Progress reset':'Reset was not saved. Check the save status and retry.');
  });
 }
 experience=window.DevFlowExperience.create({state:()=>state,save:saveState,notify:toast,go,leave:leaveTraining,type:runTyping,edit:runEditor,finish:showFinish,result:opts=>{training={kind:'result'};showFinish(opts);}});
+persistence=window.DevFlowSync.create({get:()=>state,set:value=>{state=value;},fetch:(...args)=>fetch(...args),storage:localStorage,
+  status:value=>{const node=$('save-status');node.textContent=({saved:'✓ Saved on this computer',saving:'Saving…',offline:'Browser backup · Retry save',conflict:'Progress changed · Retry reset'})[value];node.dataset.status=value;},
+  updated:()=>{if(!training&&currentView!=='settings')renderAll();},
+  reset:()=>{leaveTraining();experience.cancel();toast('Progress was reset in another window. This window has been refreshed.');}
+});
 setupActions();
+$('save-status').addEventListener('click',()=>persistence.refresh());
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!training)persistence.refresh();});
 loadState();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 })();

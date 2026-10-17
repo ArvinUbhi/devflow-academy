@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 const require = createRequire(import.meta.url);
 const E = require('../src/main/resources/web/engine.js');
 
@@ -20,21 +21,21 @@ test('UI initialises and a three-part daily training session advances', async ()
         id,value:'',textContent:'',innerHTML:'',style:{},dataset:{},checked:true,
         classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x),toggle:(x,force)=>{if(force===undefined? !classes.has(x):force)classes.add(x);else classes.delete(x);}},
         listeners:{},addEventListener(type,fn){this.listeners[type]=fn;},focus(){},blur(){},
-        closest(){return null;},querySelectorAll(){return [];}
+        setAttribute(){},closest(){return null;},querySelectorAll(){return [];}
       });
     }
     return nodes.get(id);
   };
   let saved=null;
   const context={
-    window:{DevFlowEngine:E,DevFlowJava:require('../src/main/resources/web/curriculum.js'),DevFlowChallenge:require('../src/main/resources/web/challenge.js'),scrollTo(){}},
+    window:{DevFlowSync:require('../src/main/resources/web/sync.js'),DevFlowPractice:require('../src/main/resources/web/practice.js'),DevFlowEngine:E,DevFlowJava:require('../src/main/resources/web/curriculum.js'),DevFlowChallenge:require('../src/main/resources/web/challenge.js'),scrollTo(){}},
     document:{getElementById:node,querySelector(){return null;},querySelectorAll(){return [];},addEventListener(type,fn){(docListeners[type]??=[]).push(fn);}},
     fetch:async(path,opts)=>path==='/api/state'&&(!opts||opts.method!=='PUT')?{ok:true,json:async()=>null}:{ok:true,json:async()=>({saved:true})},
     localStorage:{setItem(k,v){saved=v},getItem(){return saved}},
     navigator:{serviceWorker:{register:async()=>{}}},
     performance:{now:()=>150000},
     setInterval:()=>1,clearInterval(){},setTimeout:()=>1,clearTimeout(){},
-    confirm:()=>true,console,Date,Math,Number,Array,Object,String,JSON,URL,Blob,Event
+    confirm:()=>true,crypto,console,Date,Math,Number,Array,Object,String,JSON,URL,Blob,Event
   };
   vm.runInNewContext(await readFile(new URL('../src/main/resources/web/experience.js',import.meta.url),'utf8'),context,{filename:'experience.js'});
   vm.runInNewContext(code,context,{filename:'app.js'});

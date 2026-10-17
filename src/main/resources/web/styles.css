@@ -14,3 +14,17 @@ body{background:#101219}button,a,input,textarea{ -webkit-tap-highlight-color:tra
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 /* Keep every training destination reachable in short IDE tool windows. */
 .sidebar{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#494259 transparent}
+
+/* Practice studio: compact enough for the IDE tool window. */
+.quick-practice{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 28px;margin:24px 0}
+.quick-practice h3{font-size:22px;margin:8px 0}.quick-practice p{color:var(--muted);margin:0;font-size:13px}
+.practice-top{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;margin-bottom:32px}.practice-top>.panel{padding:28px}
+.practice-top h2{margin:10px 0 18px}.key-picks{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}
+.key-pick{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #34394b;border-radius:10px;background:#1c2030;color:#e6e3f2;cursor:pointer}.key-pick small{color:#a5acc1}.key-pick:hover{border-color:#b4a3ff}
+.practice-days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:24px 0}.practice-day{text-align:center;font-size:12px;color:#989fb3}.practice-day strong{display:grid;place-items:center;background:#202535;border:1px solid #34394b;border-radius:10px;height:42px;margin-top:9px;font-size:20px}.practice-day.practised strong{color:#a0e1c1;border-color:#4c7667;background:#203a32}
+.milestone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 32px}.milestone{display:flex;gap:14px;border:1px solid #30364a;border-radius:14px;padding:20px;color:#a5acc1;background:#151a25}.milestone>span{font-size:24px}.milestone strong{font-size:14px}.milestone p{font-size:12px;line-height:1.6;margin:8px 0 0}.milestone.earned{border-color:#4e466f;color:#eeeafa}.milestone.earned>span{color:#b9a7ff}
+.expected-output{padding:16px;border-radius:10px;background:#111620;color:#a0e1c1;white-space:pre-wrap}.save-status{font-size:11px;max-width:185px;text-align:right}.save-status[data-status=offline],.save-status[data-status=conflict]{color:#e8c783}
+@media(max-width:1100px){.quick-practice{align-items:flex-start;flex-direction:column}.milestone-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.practice-top{grid-template-columns:1fr}.quick-practice,.practice-top>.panel{padding:22px}.practice-days{gap:5px}.milestone-grid{grid-template-columns:1fr}.save-status{max-width:125px;font-size:10px}.quick-practice .flow-actions{flex-wrap:wrap}}
+
+.editor-help{margin:10px 0 18px;color:#a5acc1;font-size:12px}.editor-help:empty{display:none}

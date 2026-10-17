@@ -25,12 +25,38 @@ jobs:
         with:
           name: devflow-jar
           path: devflow.jar
+      - name: Package the offline work download
+        run: python scripts/package-work.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: devflow-work
+          path: downloads/devflow-work-*.zip
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '8'
       - name: Smoke test the standalone app on Java 8
-        run: node --test tests/server.test.mjs tests/cli.test.mjs
+        run: node --test tests/server.test.mjs tests/cli.test.mjs tests/launcher.test.mjs
+  launcher:
+    needs: build
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: devflow-jar
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Launch the downloaded folder with no npm installation
+        run: node --test --test-timeout=60000 tests/launcher.test.mjs
   intellij:
     needs: build
     runs-on: ubuntu-latest

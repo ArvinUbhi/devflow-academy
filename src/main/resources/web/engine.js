@@ -47,11 +47,12 @@
     return 'BEGINNER · FINDING YOUR FLOW';
   }
   function defaultState() {
-    return {version:2, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true}, mastered:{},history:[],rounds:[],weak:{},java:{},daily:[],dailyDraft:null};
+    return {version:2, generation:'initial', settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true}, mastered:{},history:[],rounds:[],weak:{},java:{},daily:[],dailyDraft:null};
   }
   function sanitizeState(input) {
     const base = defaultState();
     if (!input || typeof input !== 'object' || Array.isArray(input)) return base;
+    if(typeof input.generation==='string'&&/^[a-zA-Z0-9-]{1,80}$/.test(input.generation))base.generation=input.generation;
     if (input.settings && typeof input.settings === 'object') {
       const x = input.settings;
       base.settings.name = String(x.name || 'Developer').slice(0,30);

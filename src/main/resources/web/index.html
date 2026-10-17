@@ -12,6 +12,8 @@
   <script src="/engine.js" defer></script>
   <script src="/curriculum.js" defer></script>
   <script src="/challenge.js" defer></script>
+  <script src="/sync.js" defer></script>
+  <script src="/practice.js" defer></script>
   <script src="/experience.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
@@ -23,6 +25,7 @@
     <nav class="nav-list" aria-label="Main navigation">
       <button class="nav-item" data-view="daily" title="Daily flow"><span class="nav-icon">◈</span> Daily flow <span class="nav-new">DAILY</span></button>
       <button class="nav-item" data-view="java" title="Java path"><span class="nav-icon">J</span> Java path</button>
+      <button class="nav-item" data-view="practice"><span class="nav-icon">✦</span> Practice studio <span class="nav-new">NEW</span></button>
       <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span> Overview</button>
       <button class="nav-item" data-view="academy"><span class="nav-icon">▤</span> Typing academy</button>
       <button class="nav-item" data-view="lab"><span class="nav-icon">⌘</span> Code lab</button>
@@ -47,7 +50,7 @@
   <div class="app-main">
     <header class="topbar">
       <div class="topbar-left"><button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">☰</button><span class="crumb-root">YOUR WORKSPACE</span><span class="crumb-slash">/</span><span id="page-crumb">Overview</span></div>
-      <div class="topbar-right"><span class="topbar-date" id="current-date"></span><span class="topbar-divider"></span><span class="user-avatar" id="avatar-initial">D</span><div class="topbar-user" id="topbar-username">Developer</div></div>
+      <div class="topbar-right"><button class="save-status text-link" id="save-status" type="button" title="Retry saving or refresh shared progress" aria-live="polite">Loading progress…</button><span class="topbar-date" id="current-date"></span><span class="topbar-divider"></span><span class="user-avatar" id="avatar-initial">D</span><div class="topbar-user" id="topbar-username">Developer</div></div>
     </header>
 
     <main id="main-content">
@@ -58,6 +61,7 @@
           <div class="flow-art" aria-hidden="true"><div class="flow-art-top"><span>daily.java</span><span>● ● ●</span></div><div class="code-art"><span class="code-purple">while</span> (learning) {<br>  <span class="code-mint">practise</span>();<br>  progress<span class="code-purple">++</span>;<br>}</div><div class="tile-art"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="art-caption">ONE GOOD HABIT. EVERY DAY.</span></div>
         </div>
         <div class="habit-strip" id="habit-strip"></div>
+        <div id="quick-practice" class="panel quick-practice"></div>
         <div class="hero-grid">
           <div class="hero-primary panel">
             <div class="hero-glow"></div><div class="panel-overline">YOUR DEVELOPER HANDICAP</div>
@@ -98,6 +102,13 @@
       <section id="view-java" class="view">
         <div class="page-heading"><div><p class="eyebrow">UNDERSTANDING THROUGH YOUR FINGERTIPS</p><h1>Think Java. Type Java<span class="violet">.</span></h1><p class="page-description">Learn the idea. Type the pattern. Recall it. Explain why it works.</p></div><span class="tag violet-tag" id="java-progress"></span></div>
         <div class="java-recommend panel" id="java-recommend"></div><div class="chapter-filters" id="java-filters"></div><div id="java-grid" class="java-grid"></div>
+      </section>
+      <section id="view-practice" class="view">
+        <div class="page-heading"><div><p class="eyebrow">SMALL REPS. USEFUL SKILLS.</p><h1>Your practice studio<span class="violet">.</span></h1><p class="page-description">Strengthen your toughest keys. Find the bug. Type the fix.</p></div><span class="tag violet-tag" id="dojo-progress"></span></div>
+        <div class="practice-top"><div class="panel" id="tune-up"></div><div class="panel" id="practice-week"></div></div>
+        <div class="section-row"><div><span class="eyebrow">DEBUG DOJO · JAVA 8</span><h2 class="section-title">Make it work. Know why.</h2><p class="section-intro">Twelve small bugs. Read the symptom, edit the code and learn the reason. Checks recognise the taught fix with flexible spacing.</p></div></div>
+        <div id="debug-grid" class="java-grid"></div>
+        <div class="section-row"><div><span class="eyebrow">EARNED THROUGH PRACTICE</span><h2 class="section-title">Your milestones</h2></div></div><div id="milestones" class="milestone-grid"></div>
       </section>
       <section id="view-intellij" class="view">
         <div class="page-heading"><div><p class="eyebrow">STAY IN YOUR EDITOR</p><h1>Your IDE. Your training ground<span class="violet">.</span></h1><p class="page-description">The same DevFlow daily challenge and Java path, inside IntelliJ IDEA.</p></div><span class="tag">INTELLIJ PLUGIN</span></div>
@@ -147,7 +158,7 @@
         </form><div class="settings-side"><div class="panel"><span class="eyebrow">PRIVACY FIRST</span><h2>Local by design</h2><p class="section-intro">Your profile and training history are saved on this computer in <code>~/.devflow/progress.json</code>. Nothing is uploaded to a cloud service.</p><button class="secondary-btn wide" id="export-btn">Export progress as JSON ↓</button><label class="import-label secondary-btn wide">Import progress JSON <input id="import-file" type="file" accept=".json,application/json" hidden></label></div><div class="panel danger-zone"><span class="eyebrow">RESET</span><h2>Start from scratch</h2><p class="section-intro">This permanently resets lessons, rounds and session history on this device.</p><button class="danger-btn" id="reset-btn">Reset all progress</button></div></div></div>
       </section>
     </main>
-    <footer class="site-footer"><span>devflow<span class="violet">.</span> v2.0</span><span>Java 8 · Offline-first · Built for deliberate practice</span></footer>
+    <footer class="site-footer"><span>devflow<span class="violet">.</span> v2.1</span><span>Java 8 · Offline-first · Built for deliberate practice</span></footer>
   </div>
 </div>
 
@@ -162,7 +173,7 @@
       <div id="keyboard-wrap"><div class="keyboard-label"><span>LIVE KEY GUIDANCE</span><span id="next-key-label">NEXT KEY · A</span></div><div class="virtual-keyboard" id="virtual-keyboard"></div></div>
       <div class="trainer-bottom"><span class="trainer-coach" id="trainer-coach">✦ Prioritise precision over speed.</span><button class="subtle-btn" id="restart-training">↻ Restart</button></div>
     </div>
-    <div class="editor-workspace hidden" id="trainer-editor"><div class="trainer-eyebrow" id="editor-eyebrow">EDITOR GYM</div><h1 id="editor-title">Fix the code</h1><p class="trainer-description" id="editor-description"></p><div class="editor-instruction" id="editor-instruction"></div><div class="editor-terminal"><div class="editor-terminal-header"><span class="terminal-light red"></span><span class="terminal-light yellow"></span><span class="terminal-light green"></span><span id="editor-filename">main.java</span><span class="terminal-hint">TAB: 4 SPACES · PASTE DISABLED</span></div><textarea id="editor-input" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea></div><div class="editor-bottom"><span id="editor-feedback" role="status">Tip: use Home, End, Ctrl/Cmd + arrows and keyboard selection.</span><button class="primary-btn" id="check-edit">Run check →</button></div></div>
+    <div class="editor-workspace hidden" id="trainer-editor"><div class="trainer-eyebrow" id="editor-eyebrow">EDITOR GYM</div><h1 id="editor-title">Fix the code</h1><p class="trainer-description" id="editor-description"></p><div class="editor-instruction" id="editor-instruction"></div><div id="editor-help" class="editor-help"></div><div class="editor-terminal"><div class="editor-terminal-header"><span class="terminal-light red"></span><span class="terminal-light yellow"></span><span class="terminal-light green"></span><span id="editor-filename">main.java</span><span class="terminal-hint">TAB: 4 SPACES · PASTE DISABLED</span></div><textarea id="editor-input" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea></div><div class="editor-bottom"><span id="editor-feedback" role="status">Tip: use Home, End, Ctrl/Cmd + arrows and keyboard selection.</span><button class="primary-btn" id="check-edit">Run check →</button></div></div>
     <div class="trainer-finish hidden" id="trainer-finish"><div class="finish-emblem">✓</div><div class="trainer-eyebrow" id="finish-eyebrow">SESSION COMPLETE</div><h1 id="finish-title">Nicely done.</h1><p id="finish-description">Every focused session adds up.</p><div class="finish-stats" id="finish-stats"></div><div class="finish-coaching" id="finish-coaching"></div><div id="finish-share" class="share-actions hidden"><button class="primary-btn" id="share-result">Share my score ↗</button><button class="secondary-btn" id="download-card">Save score card ↓</button></div><div class="finish-actions"><button class="secondary-btn" id="finish-exit">Return to dashboard</button><button class="primary-btn" id="finish-next">Keep training →</button></div></div>
   </div>
 </div>
