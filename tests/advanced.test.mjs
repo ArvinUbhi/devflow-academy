@@ -11,7 +11,7 @@ const C=require('../src/main/resources/web/challenge.js');
 const E=require('../src/main/resources/web/engine.js');
 
 test('advanced curriculum covers patterns, concurrency and low-latency topics',()=>{
- assert.equal(A.lessons.length,15);
+ assert.equal(A.lessons.length,20);
  assert.ok(A.lessons.some(l=>l.chapter==='Design patterns'));
  assert.ok(A.lessons.some(l=>l.chapter==='Concurrency'));
  assert.ok(A.lessons.some(l=>l.chapter==='Low latency / GC'));
@@ -41,9 +41,9 @@ test('old daily challenges remain identical; new dates have shared reproducible 
  assert.equal(next.lesson.advanced,true);
  assert.deepEqual(next,C.daily('2026-10-19T13:00:00+00:00'));
  assert.notDeepEqual(next.stages,C.daily('2026-10-20T13:00:00Z').stages);
- const state=E.sanitizeState({java:{'java-25':{mastered:true,attempts:2},'java-39':{mastered:false,attempts:3}}});
+ const state=E.sanitizeState({java:{'java-25':{mastered:true,attempts:2},'java-44':{mastered:false,attempts:3}}});
  assert.equal(state.java['java-25'].mastered,true);
- assert.equal(state.java['java-39'].attempts,3);
+ assert.equal(state.java['java-44'].attempts,3);
 });
 test('every advanced scenario variant compiles and produces the expected Java 8 output',async t=>{
  const dir=await mkdtemp(join(tmpdir(),'devflow-advanced-'));
