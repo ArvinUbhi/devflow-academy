@@ -65,7 +65,27 @@
     ['Tail latency rather than averages','Low latency / GC','In a latency-sensitive system, the slowest requests can matter more than average throughput. Inspect percentile distributions and coordinated-omission pitfalls.','Sorting a few samples illustrates tail values but is not an accurate substitute for a proper p99 benchmark.',
       'long[] samples = {100, 300, 200, 900, 500};\njava.util.Arrays.sort(samples);\nSystem.out.println(samples[samples.length - 1]);','900',
       'Which metric highlights occasional slow responses?',['The median only','p99 latency','The sum of request IDs'],1,
-      'Read the largest value after sorting.','samples[samples.length - 1]','Metrics are not meaningful without units and workloads.','samples',['samples','latencies','durations']]
+      'Read the largest value after sorting.','samples[samples.length - 1]','Metrics are not meaningful without units and workloads.','samples',['samples','latencies','durations']],
+    ['Off-heap direct buffers','Low latency / GC','A direct ByteBuffer stores its elements in native memory and can reduce intermediate copying for I/O. Create and size buffers outside latency-sensitive hot paths.','allocateDirect itself allocates a Java wrapper and native memory. Off-heap buffers have ownership, lifetime and cleanup costs and do not guarantee zero GC.',
+      'java.nio.ByteBuffer direct = java.nio.ByteBuffer.allocateDirect(16);\ndirect.putLong(1234L);\ndirect.flip();\nSystem.out.println(direct.getLong());','1234',
+      'Does ByteBuffer.allocateDirect guarantee an allocation-free call?',['Yes, always','No, it allocates a wrapper and native memory','Only on Linux'],1,
+      'Clear a reusable direct buffer before the next message.','direct.clear();','Learn where the buffer comes from and who owns it.','direct',['direct','packet','frame']],
+    ['Escape analysis and scalar replacement','Low latency / GC','A JIT may eliminate short-lived object allocations if an object does not escape and the optimisation is profitable. This is JVM, code-shape and workload dependent.','Do not assume new inside a hot loop must allocate, or that it never does. Confirm with allocation profiling, compiler diagnostics and realistic benchmarks.',
+      'class ValuePair { final int left, right;\n    ValuePair(int left, int right) { this.left = left; this.right = right; }\n    int sum() { return left + right; } }\nSystem.out.println(new ValuePair(2, 3).sum());','5',
+      'Who decides whether this temporary object is scalar-replaced?',['The JVM JIT under suitable conditions','The compiler always','The operating system scheduler'],0,
+      'Call sum on a temporary value pair.','new ValuePair(2, 3).sum();','Avoid treating escape analysis as a portability guarantee.','ValuePair',['ValuePair','PairValue','PointValue']],
+    ['Bounded queues and backpressure','Concurrency','A bounded queue caps buffered items. offer returns false instead of silently allowing unlimited growth, allowing a deliberate drop, retry or backpressure policy.','ArrayBlockingQueue uses locks, so it is illustrative rather than an automatically suitable low-latency queue. Understand producer/consumer ownership and measure contention.',
+      'java.util.concurrent.ArrayBlockingQueue<String> queue = new java.util.concurrent.ArrayBlockingQueue<>(2);\nqueue.offer("one");\nqueue.offer("two");\nSystem.out.println(queue.offer("three"));','false',
+      'What does offer return when this bounded queue is full?',['true','null','false'],2,
+      'Attempt to enqueue the next event without blocking.','queue.offer("next");','A safe overload policy matters more than micro-optimisation.','queue',['queue','mailbox','inbox']],
+    ['Contention-aware counters','Concurrency','LongAdder spreads contended statistical increments across cells. It can improve throughput for metrics under contention, but sum is not an atomic snapshot.','For sequences or control decisions requiring linearizable reads, use AtomicLong or a lock rather than LongAdder.',
+      'java.util.concurrent.atomic.LongAdder adder = new java.util.concurrent.atomic.LongAdder();\nadder.add(3);\nadder.increment();\nSystem.out.println(adder.sum());','4',
+      'Which scenario is LongAdder intended for?',['Generating strictly ordered IDs','Highly contended approximate statistics','Coordinating lock-free publication'],1,
+      'Increment a statistical counter.','adder.increment();','Know the difference between telemetry counters and sequence numbers.','adder',['adder','metrics','hits']],
+    ['Thread-local reusable scratch space','Low latency / GC','ThreadLocal can give each thread a reusable scratch buffer and avoid repeated per-operation allocation after initialisation. Ownership is per thread, not per task.','Buffers may grow and remain attached to long-lived pooled threads. ThreadLocal does not prevent other allocations or GC pauses elsewhere.',
+      'ThreadLocal<StringBuilder> scratch = ThreadLocal.withInitial(() -> new StringBuilder(32));\nStringBuilder buffer = scratch.get();\nbuffer.append("ok");\nSystem.out.println(buffer.length());','2',
+      'Does ThreadLocal automatically share one scratch buffer across threads?',['Yes','No, each thread has its own value','Only after a GC'],1,
+      'Reset this thread’s scratch buffer.','scratch.get().setLength(0);','Think about lifecycle, maximum size and per-thread memory cost.','scratch',['scratch','threadCache','workspace']]
   ];
   const shortcuts={
     'Design patterns':['Navigate to Declaration','Ctrl+B','Cmd+B'],
@@ -157,6 +177,23 @@
       case 'java-39':{
         const high=600+n%2000;
         change('200, 900, 500','200, '+high+', 500');output=String(high);break;
+      }
+      case 'java-40':{
+        const value=1000+n%8000;change('putLong(1234L)','putLong('+value+'L)');output=String(value);break;
+      }
+      case 'java-41':{
+        const x=2+n%40,y=3+(n>>>8)%40;
+        change('new ValuePair(2, 3)','new ValuePair('+x+', '+y+')');output=String(x+y);break;
+      }
+      case 'java-42':{
+        change('queue.offer("three")','queue.offer("'+pick(['third','overflow','new','trade','next'])+'")');break;
+      }
+      case 'java-43':{
+        const value=1+n%1000;change('adder.add(3)','adder.add('+value+')');output=String(value+1);break;
+      }
+      case 'java-44':{
+        const word=pick(['ok','tick','quote','order','event']);
+        change('buffer.append("ok")','buffer.append("'+word+'")');output=String(word.length);break;
       }
     }
     return {...lesson,code:code.replace(variable,alias),output,
