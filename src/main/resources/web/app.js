@@ -8,7 +8,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const formatDate = iso => new Date(iso).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
 const nowISO = () => new Date().toISOString();
 const round = E.round1;
-const titleFor = name => ({dashboard:'Overview',academy:'Typing academy',lab:'Code lab',editor:'Editor gym',handicap:'Typing handicap',insights:'Insights',projects:'Projects',settings:'Settings',daily:'Daily flow',java:'Advanced Java',wordtest:'Typing test',intellij:'IntelliJ IDEA'})[name];
+const titleFor = name => ({dashboard:'Overview',academy:'Typing academy',lab:'Code lab',editor:'Editor gym',handicap:'Typing handicap',insights:'Insights',projects:'Projects',settings:'Settings',daily:'Daily flow',java:'Advanced Java',wordtest:'Typing test',performance:'Performance lab',intellij:'IntelliJ IDEA'})[name];
 
 const LESSONS = [
  {title:'Meet your home row',focus:'A S D F · J K L ;',level:'FOUNDATION',time:'3 min',guide:'Place your index fingers on F and J (the raised bumps). Keep wrists neutral. Always return your fingers home. Type slowly with the correct fingers.',target:'asdf jkl; asdf jkl; fj fj dk dk sl sl a; a; f j d k s l'},
@@ -464,6 +464,11 @@ function checkEditor(){
  const next=EDITS[(EDITS.findIndex(e=>e.id===t.item.id)+1)%EDITS.length];
  showFinish({eyebrow:'EDITOR CHALLENGE SOLVED',title:'Bug fixed. Nicely done.',description:'You completed the edit with your keyboard.',stats,coaching:'Try finishing the next edit with fewer keystrokes and more keyboard navigation. Editor speeds are not included in official handicap ratings.',next:()=>runEditor(next),nextLabel:'Next editor task →'});
 }
+function renderPerformance(){
+ const lessons=Advanced.lessons.filter(x=>x.chapter==='Low latency / GC'||x.chapter==='Concurrency');
+ const grid=$('performance-grid');if(!grid)return;
+ grid.innerHTML=lessons.map(l=>'<button class="java-card" data-flow="java-open" data-id="'+l.id+'"><div class="java-card-top"><span class="micro-label">'+esc(l.chapter)+'</span><span class="java-check">↗</span></div><h3>'+esc(l.title)+'</h3><p>'+esc(l.why)+'</p><div class="java-card-footer"><span>LEARN · TYPE · RECALL</span><span>~5 MIN</span></div></button>').join('');
+}
 function setupActions(){
  document.addEventListener('click',ev=>{
   const flow=ev.target.closest('[data-flow]');if(flow)return;
@@ -535,6 +540,7 @@ function setupActions(){
 }
 experience=window.DevFlowExperience.create({state:()=>state,save:saveState,notify:toast,go,leave:leaveTraining,type:runTyping,edit:runEditor,finish:showFinish,result:opts=>{training={kind:'result'};showFinish(opts);}});
 setupActions();
+renderPerformance();
 makeWordtest();
 loadState();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
