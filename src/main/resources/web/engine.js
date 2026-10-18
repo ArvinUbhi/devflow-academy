@@ -47,7 +47,7 @@
     return 'BEGINNER · FINDING YOUR FLOW';
   }
   function defaultState() {
-    return {version:2, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true}, mastered:{},history:[],rounds:[],weak:{},java:{},daily:[],dailyDraft:null};
+    return {version:2, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true,blurCompleted:false}, mastered:{},history:[],rounds:[],weak:{},java:{},daily:[],dailyDraft:null};
   }
   function sanitizeState(input) {
     const base = defaultState();
@@ -60,6 +60,7 @@
       base.settings.minutes = clamp(Number(x.minutes)||15,5,60);
       base.settings.goalWpm = clamp(Number(x.goalWpm)||65,20,180);
       base.settings.showKeyboard = x.showKeyboard !== false;
+      base.settings.blurCompleted = x.blurCompleted === true;
     }
     if (input.mastered && typeof input.mastered === 'object' && !Array.isArray(input.mastered)) base.mastered = Object.fromEntries(Object.entries(input.mastered).filter(([k,v])=>/^lesson-\d{1,2}$/.test(k) && v === true));
     if (Array.isArray(input.history)) base.history = input.history.filter(x => x && typeof x === 'object' && typeof x.date === 'string' && Number.isFinite(Date.parse(x.date)) && Number.isFinite(x.wpm) && Number.isFinite(x.accuracy)).slice(-10000);
@@ -67,7 +68,7 @@
     if (input.weak && typeof input.weak === 'object' && !Array.isArray(input.weak)) base.weak = Object.fromEntries(Object.entries(input.weak).filter(([k,v])=>k.length===1 && Number.isFinite(v) && v>=0).slice(0,100));
     if(input.java && typeof input.java==='object' && !Array.isArray(input.java)) {
       for(const [id,value] of Object.entries(input.java)) {
-        if(!/^java-([1-9]|1\d|2[0-4])$/.test(id)||!value||typeof value!=='object')continue;
+        if(!/^java-([1-9]|[12]\d|3\d|4[0-4])$/.test(id)||!value||typeof value!=='object')continue;
         base.java[id]={mastered:value.mastered===true,attempts:clamp(Number(value.attempts)||0,0,100000),due:typeof value.due==='string'&&Number.isFinite(Date.parse(value.due))?value.due:null,last:typeof value.last==='string'?value.last.slice(0,30):null};
       }
     }

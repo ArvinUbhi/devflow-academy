@@ -2,7 +2,7 @@
   'use strict';
   root.DevFlowExperience={create};
   function create(api) {
-    const J=root.DevFlowJava,C=root.DevFlowChallenge,E=root.DevFlowEngine;
+    const J=root.DevFlowJava,C=root.DevFlowChallenge,E=root.DevFlowEngine,A=root.DevFlowAdvanced||{lessons:[],variant:x=>x};
     const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     let active=null, chapter='All', shareResult=null, dialogFocus=null;
     function showLearning(html) {
@@ -34,19 +34,21 @@
       return `<span class="eyebrow">DAILY #${r.number} · ${r.practice?'PRACTICE':'FIRST FINISH'}</span><h2>You found your flow.</h2><div class="score-points">${r.points}<span>/ 1000</span></div><div class="result-tiles" aria-label="Accuracy tiles by round">${r.segments.map(x=>`<div>${C.tiles(x)}</div>`).join('')}</div><div class="score-details"><span><strong>${r.wpm}</strong> WPM</span><span><strong>${r.accuracy}%</strong> accuracy</span><span><strong>${r.knowledge?'◆':'◇'}</strong> Java insight</span></div><div class="flow-actions"><button class="primary-btn" data-flow="share" data-key="${r.key}">Share my score ↗</button><button class="secondary-btn" data-flow="daily-start">Play again for practice</button></div><p class="quiet-copy">${r.practice?'Practice result. Your first finish remains saved.':'Your first finish is saved. Replays won’t change it.'} No code spoilers in your shared card.</p>`;
     }
     function renderJava() {
-      const s=api.state(), done=J.lessons.filter(x=>s.java[x.id]?.mastered).length;
-      const due=J.lessons.filter(x=>s.java[x.id]?.due&&Date.parse(s.java[x.id].due)<=Date.now());
-      const next=due[0]||J.lessons.find(x=>!s.java[x.id]?.mastered)||J.lessons[0];
-      $('java-progress').textContent=`${done} / 24 MASTERED`;
+      const s=api.state(), all=[...J.lessons,...A.lessons], done=all.filter(x=>s.java[x.id]?.mastered).length;
+      const due=all.filter(x=>s.java[x.id]?.due&&Date.parse(s.java[x.id].due)<=Date.now());
+      const next=due.find(x=>x.advanced)||due[0]||A.lessons.find(x=>!s.java[x.id]?.mastered)||J.lessons.find(x=>!s.java[x.id]?.mastered)||J.lessons[0];
+      $('java-progress').textContent=`${done} / ${all.length} MASTERED`;
       $('java-recommend').innerHTML=`<div><span class="eyebrow">${due.length?'SPACED REVIEW · '+due.length+' READY':'YOUR NEXT SMALL WIN'}</span><h2>${esc(next.title)}</h2><p>${done?'Keep the patterns fresh. A short recall is better than starting from scratch.':'New to typing? Start with the home row, then learn your first Java pattern.'}</p></div><div class="flow-actions"><button class="primary-btn" data-flow="java-open" data-id="${next.id}">${due.length?'Review the pattern':'Start learning'} →</button>${done?'':'<button class="text-link" data-go="academy">Typing basics first ↗</button>'}</div>`;
+      $('advanced-grid').innerHTML=A.lessons.map(l=>'<button class="java-card '+(s.java[l.id]?.mastered?'is-mastered':'')+'" data-flow="java-open" data-id="'+l.id+'"><div class="java-card-top"><span class="java-number">'+String(l.number).padStart(2,'0')+'</span><span class="micro-label">'+esc(l.chapter)+'</span><span class="java-check">'+(s.java[l.id]?.mastered?'✓':'↗')+'</span></div><h3>'+esc(l.title)+'</h3><p>'+esc(l.concept)+'</p><div class="java-card-footer"><span>LEARN · TYPE · RECALL</span><span>~5 MIN</span></div></button>').join('');
       const chapters=['All',...new Set(J.lessons.map(x=>x.chapter))];
       $('java-filters').innerHTML=chapters.map(x=>`<button class="filter-btn ${chapter===x?'selected':''}" data-flow="chapter" data-chapter="${esc(x)}">${esc(x)}</button>`).join('');
       $('java-grid').innerHTML=J.lessons.filter(x=>chapter==='All'||x.chapter===chapter).map(l=>`<button class="java-card ${s.java[l.id]?.mastered?'is-mastered':''}" data-flow="java-open" data-id="${l.id}"><div class="java-card-top"><span class="java-number">${String(l.number).padStart(2,'0')}</span><span class="micro-label">${esc(l.chapter)}</span><span class="java-check">${s.java[l.id]?.mastered?'✓':'↗'}</span></div><h3>${esc(l.title)}</h3><p>${esc(l.concept)}</p><div class="java-card-footer"><span>LEARN · TYPE · RECALL</span><span>~3 MIN</span></div></button>`).join('');
     }
     function startJava(id) {
-      const lesson=J.lessons.find(x=>x.id===id);if(!lesson)return;
+      const original=[...J.lessons,...A.lessons].find(x=>x.id===id);if(!original)return;
+      const lesson=original.advanced?A.variant(original,Math.floor(Math.random()*0xffffffff)):original;
       api.leave();active={mode:'java',lesson,phase:'learn',assisted:false,typed:null};
-      showLearning(`<div class="learning-steps"><span class="current">01 Learn</span><span>02 Type</span><span>03 Recall</span><span>04 Explain</span></div><p class="eyebrow">${esc(lesson.chapter)} · PATTERN ${lesson.number} / 24</p><h1>${esc(lesson.title)}<span class="violet">.</span></h1><p class="learning-concept">${esc(lesson.concept)}</p><div class="lesson-code"><div><span>Example.java</span><span>JAVA 8</span></div><pre><code>${highlight(lesson.code)}</code></pre></div><div class="learning-notes"><div><span class="eyebrow">THE IDEA TO KEEP</span><p>${esc(lesson.why)}</p></div><div><span class="eyebrow">TYPE WITH INTENT</span><p>${esc(lesson.tip)}</p></div></div><div class="shortcut-note"><span>INTELLIJ · ${esc(lesson.shortcut.name)}</span><kbd>${esc(lesson.shortcut.windows)}</kbd><small>WIN / LINUX</small><kbd>${esc(lesson.shortcut.mac)}</kbd><small>MAC</small></div><button class="primary-btn" data-flow="java-type">Got it. Let’s type →</button>`);
+      showLearning(`<div class="learning-steps"><span class="current">01 Learn</span><span>02 Type</span><span>03 Recall</span><span>04 Explain</span></div><p class="eyebrow">${esc(lesson.chapter)} · PATTERN ${lesson.number} / ${J.lessons.length+A.lessons.length}</p><h1>${esc(lesson.title)}<span class="violet">.</span></h1><p class="learning-concept">${esc(lesson.concept)}</p><div class="lesson-code"><div><span>Example.java</span><span>JAVA 8</span></div><pre><code>${highlight(lesson.code)}</code></pre></div><div class="learning-notes"><div><span class="eyebrow">THE IDEA TO KEEP</span><p>${esc(lesson.why)}</p></div><div><span class="eyebrow">TYPE WITH INTENT</span><p>${esc(lesson.tip)}</p></div></div><div class="shortcut-note"><span>INTELLIJ · ${esc(lesson.shortcut.name)}</span><kbd>${esc(lesson.shortcut.windows)}</kbd><small>WIN / LINUX</small><kbd>${esc(lesson.shortcut.mac)}</kbd><small>MAC</small></div><button class="primary-btn" data-flow="java-type">Got it. Let’s type →</button>`);
     }
     function highlight(code) {
       return esc(code).replace(/\b(public|private|class|interface|implements|int|double|long|boolean|void|return|if|else|for|while|new|try|catch|true|false|null)\b/g,'<span class="code-purple">$1</span>');
@@ -100,7 +102,7 @@
         const lesson=active.lesson,previous=s.java[lesson.id]||{attempts:0},qualified=active.typed.accuracy>=94&&!active.assisted&&active.correct;
         const count=previous.attempts+1,days=qualified?Math.min(14,Math.pow(2,Math.min(count-1,4))):1;
         s.java[lesson.id]={mastered:!!previous.mastered||qualified,attempts:count,last:new Date().toISOString(),due:new Date(Date.now()+days*86400000).toISOString()};
-        api.save();const next=J.lessons[lesson.number];
+        api.save();const next=[...J.lessons,...A.lessons][lesson.number];
         showLearning(`<span class="eyebrow">${qualified?'PATTERN MASTERED ✓':'PATTERN PRACTISED'}</span><h1>${qualified?'You can type it. And explain it.':'Another useful repetition.'}</h1><p class="learning-concept">${qualified?'You typed with at least 94% accuracy, recalled the pattern without a hint, and understood the idea.':'Mastery needs 94% typing accuracy, an unassisted recall and a correct first explanation. Revisit this lesson to strengthen the pattern.'}</p><div class="score-details"><span><strong>${active.typed.wpm}</strong> typing WPM</span><span><strong>${active.typed.accuracy}%</strong> accuracy</span><span><strong>+${qualified&&!previous.mastered?80:30}</strong> XP</span></div><p class="section-intro">Ready for spaced review in ${days} day${days===1?'':'s'}.</p><div class="flow-actions">${next?`<button class="primary-btn" data-flow="java-open" data-id="${next.id}">Next: ${esc(next.title)} →</button>`:''}<button class="secondary-btn" data-go="java">Back to Java path</button></div>`);
         active.phase='done';
       }
@@ -147,6 +149,7 @@
       switch(button.dataset.flow) {
         case 'daily-start':startDaily();break;
         case 'java-open':startJava(button.dataset.id);break;
+        case 'java-endless':{const choices=A.lessons.filter(l=>l.advanced);if(!choices.length)break;const state=api.state();const ranked=choices.slice().sort((a,b)=>(state.java[a.id]?.attempts||0)-(state.java[b.id]?.attempts||0));startJava(ranked[Math.floor(Math.random()*Math.min(3,ranked.length))].id);break;}
         case 'java-type':if(active?.mode==='java'){active.phase='typing';api.type({id:active.lesson.id,title:active.lesson.title,target:active.lesson.code,description:active.lesson.tip},'java-type');$('trainer-eyebrow').textContent='JAVA PATH · 02 TYPE';}break;
         case 'chapter':chapter=button.dataset.chapter;renderJava();break;
         case 'answer':answer(Number(button.dataset.answer));break;

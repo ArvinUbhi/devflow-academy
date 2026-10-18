@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/styles.css">
   <script src="/engine.js" defer></script>
   <script src="/curriculum.js" defer></script>
+  <script src="/advanced.js" defer></script>
   <script src="/challenge.js" defer></script>
   <script src="/experience.js" defer></script>
   <script src="/app.js" defer></script>
@@ -22,7 +23,8 @@
     <div class="sidebar-title">WORKSPACE</div>
     <nav class="nav-list" aria-label="Main navigation">
       <button class="nav-item" data-view="daily" title="Daily flow"><span class="nav-icon">◈</span> Daily flow <span class="nav-new">DAILY</span></button>
-      <button class="nav-item" data-view="java" title="Java path"><span class="nav-icon">J</span> Java path</button>
+      <button class="nav-item" data-view="java" title="Advanced Java"><span class="nav-icon">J</span> Advanced Java</button>
+      <button class="nav-item" data-view="wordtest" title="Typing test"><span class="nav-icon">⌨</span> Typing test</button>
       <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span> Overview</button>
       <button class="nav-item" data-view="academy"><span class="nav-icon">▤</span> Typing academy</button>
       <button class="nav-item" data-view="lab"><span class="nav-icon">⌘</span> Code lab</button>
@@ -91,13 +93,21 @@
       </section>
 
       <section id="view-daily" class="view">
-        <div class="page-heading"><div><p class="eyebrow">YOUR DAILY KEYBOARD RITUAL</p><h1>Find your flow<span class="violet">.</span></h1><p class="page-description">Same Java. Same rules. Your own rhythm.</p></div><span class="tag violet-tag" id="daily-number"></span></div>
+        <div class="page-heading"><div><p class="eyebrow">YOUR DAILY KEYBOARD RITUAL</p><h1>Find your flow<span class="violet">.</span></h1><p class="page-description">Shared daily challenges with advanced Java patterns, concurrency and performance topics.</p></div><span class="tag violet-tag" id="daily-number"></span></div>
         <div class="daily-layout"><div class="panel daily-main" id="daily-main"></div><aside class="daily-side"><div class="panel"><span class="eyebrow">A FAIR COMPARISON</span><h2>How it works</h2><ol class="rules-list"><li><strong>Three short typing rounds.</strong> Warm up, type real Java, seal the pattern.</li><li><strong>One Java insight.</strong> Predict what the code does. First answer counts.</li><li><strong>Save your first finish.</strong> Replay for practice. Your daily score stays put.</li><li><strong>Share without spoilers.</strong> Compare score cards with your friends.</li></ol><p class="quiet-copy">Resets at midnight UTC. Scores are saved locally and are self-reported. Accuracy earns 60%, pace 30%, Java insight 10%.</p></div><div class="panel"><span class="eyebrow">NEXT DAILY FLOW</span><div class="reset-clock" id="reset-clock">00:00:00</div><p class="quiet-copy">A fresh reason to return. No rush to finish today.</p></div></aside></div>
         <div class="panel history-panel"><div class="card-heading"><h2>Your daily record</h2><span class="tag">LOCAL SCORES</span></div><div id="daily-history"></div></div>
       </section>
       <section id="view-java" class="view">
-        <div class="page-heading"><div><p class="eyebrow">UNDERSTANDING THROUGH YOUR FINGERTIPS</p><h1>Think Java. Type Java<span class="violet">.</span></h1><p class="page-description">Learn the idea. Type the pattern. Recall it. Explain why it works.</p></div><span class="tag violet-tag" id="java-progress"></span></div>
-        <div class="java-recommend panel" id="java-recommend"></div><div class="chapter-filters" id="java-filters"></div><div id="java-grid" class="java-grid"></div>
+        <div class="page-heading"><div><p class="eyebrow">DESIGN PATTERNS · CONCURRENCY · LOW LATENCY</p><h1>Advanced Java<span class="violet">.</span></h1><p class="page-description">Build architecture fluency, then reason about allocations, GC and tail latency.</p></div><span class="tag violet-tag" id="java-progress"></span></div>
+        <div class="java-recommend panel" id="java-recommend"></div>
+        <div class="advanced-heading"><div><span class="eyebrow">PROFESSIONAL TRACK</span><h2>Patterns and low-latency Java</h2><p class="page-description">Learn the trade-offs. Type, recall and explain.</p></div><button class="primary-btn" data-flow="java-endless">Generate a new scenario ↻</button></div>
+        <div id="advanced-grid" class="java-grid"></div>
+        <details class="foundation-details"><summary>Foundation refreshers · 24 Java lessons</summary><div class="chapter-filters" id="java-filters"></div><div id="java-grid" class="java-grid"></div></details>
+      </section>
+      <section id="view-wordtest" class="view">
+        <div class="page-heading"><div><p class="eyebrow">TOUCH TYPING · FRESH WORDS EACH ROUND</p><h1>Typing test<span class="violet">.</span></h1><p class="page-description">A random-word typing test inspired by Monkeytype. Train without memorising prompts.</p></div></div>
+        <div class="panel wordtest-panel"><div class="wordtest-controls"><label>Length <select id="wordtest-count"><option value="25">25 words</option><option value="50" selected>50 words</option><option value="100">100 words</option></select></label><label class="wordtest-check"><input type="checkbox" id="wordtest-punctuation"> Punctuation</label><label class="wordtest-check"><input type="checkbox" id="wordtest-numbers"> Numbers</label></div>
+        <p class="eyebrow">RANDOM SAMPLE PREVIEW</p><p class="wordtest-preview" id="wordtest-preview"></p><div class="flow-actions"><button id="wordtest-start" class="primary-btn">Start typing test →</button><button id="wordtest-refresh" class="secondary-btn">New words ↻</button></div><p class="quiet-copy">New words are generated locally. No account or network access required. Results appear in Insights.</p></div>
       </section>
       <section id="view-intellij" class="view">
         <div class="page-heading"><div><p class="eyebrow">STAY IN YOUR EDITOR</p><h1>Your IDE. Your training ground<span class="violet">.</span></h1><p class="page-description">The same DevFlow daily challenge and Java path, inside IntelliJ IDEA.</p></div><span class="tag">INTELLIJ PLUGIN</span></div>
@@ -143,24 +153,26 @@
           <div class="form-two"><label>Primary coding language <select id="setting-language"><option>Java</option><option>Python</option><option>JavaScript</option><option>C#</option><option>SQL</option></select></label><label>Keyboard layout <select id="setting-layout"><option value="QWERTY">QWERTY</option><option value="UK-QWERTY">UK QWERTY</option></select></label></div>
           <div class="form-two"><label>Daily goal (minutes) <input id="setting-minutes" type="number" min="5" max="60" step="5"></label><label>Target code WPM <input id="setting-wpm" type="number" min="20" max="180" step="5"></label></div>
           <label class="toggle-row"><span><strong>Show keyboard guidance</strong><small>Display a virtual keyboard and next-key highlight during drills.</small></span><input id="setting-keyboard" type="checkbox" checked></label>
+          <label class="toggle-row"><span><strong>Blur completed text</strong><small>Blur only words already typed, keeping upcoming words readable.</small></span><input id="setting-blur" type="checkbox"></label>
           <button class="primary-btn" type="submit">Save preferences ✓</button><div class="form-message" id="settings-feedback" role="status"></div>
         </form><div class="settings-side"><div class="panel"><span class="eyebrow">PRIVACY FIRST</span><h2>Local by design</h2><p class="section-intro">Your profile and training history are saved on this computer in <code>~/.devflow/progress.json</code>. Nothing is uploaded to a cloud service.</p><button class="secondary-btn wide" id="export-btn">Export progress as JSON ↓</button><label class="import-label secondary-btn wide">Import progress JSON <input id="import-file" type="file" accept=".json,application/json" hidden></label></div><div class="panel danger-zone"><span class="eyebrow">RESET</span><h2>Start from scratch</h2><p class="section-intro">This permanently resets lessons, rounds and session history on this device.</p><button class="danger-btn" id="reset-btn">Reset all progress</button></div></div></div>
       </section>
     </main>
-    <footer class="site-footer"><span>devflow<span class="violet">.</span> v2.0</span><span>Java 8 · Offline-first · Built for deliberate practice</span><span>Created by <a class="footer-credit" href="https://github.com/ArvinUbhi" target="_blank" rel="noopener noreferrer">Arvin Ubhi</a></span></footer>
+    <footer class="site-footer"><span>devflow<span class="violet">.</span> v2.1</span><span>Java 8 · Offline-first · Built for deliberate practice</span><span>Created by <a class="footer-credit" href="https://github.com/ArvinUbhi" target="_blank" rel="noopener noreferrer">Arvin Ubhi</a></span></footer>
   </div>
 </div>
 
 <div class="training-overlay hidden" id="training-overlay" role="dialog" aria-modal="true" aria-labelledby="training-title">
   <div class="training-shell">
     <div class="trainer-topbar"><div class="trainer-logo">&gt;_ <span>devflow.</span></div><div id="training-counter" class="trainer-counter">FOCUSED PRACTICE</div><button class="trainer-exit" id="exit-training">✕ <span>Exit</span></button></div>
+    <div id="caps-lock-warning" class="caps-lock-warning hidden" role="status" aria-live="polite">⇪ Caps Lock is ON — turn it off for accurate typing</div>
     <div id="trainer-learning" class="learning-workspace hidden"></div>
     <div class="trainer-content" id="trainer-typing">
       <div class="trainer-eyebrow" id="trainer-eyebrow">LESSON 01 · HOME ROW</div><h1 id="training-title">Home Row Fundamentals</h1><p class="trainer-description" id="training-description"></p>
       <div class="trainer-metrics"><div><small>EFFECTIVE SPEED</small><strong><span id="live-wpm">0</span> <em>WPM</em></strong></div><div><small>ACCURACY</small><strong><span id="live-accuracy">100</span><em>%</em></strong></div><div><small>TIME</small><strong id="live-time">0:00</strong></div><div><small>ERRORS</small><strong id="live-errors">0</strong></div></div>
       <div class="typing-card" id="typing-card" tabindex="0"><div class="typing-card-top"><span id="typing-label">TYPE THE TEXT BELOW</span><span id="typing-progress">0%</span></div><div id="typing-prompt" class="typing-prompt" aria-live="off"></div><textarea id="typing-capture" aria-label="Type the highlighted text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea><div class="typing-hint">Click here and start typing · Backspace to correct mistakes · Paste is disabled</div></div>
       <div id="keyboard-wrap"><div class="keyboard-label"><span>LIVE KEY GUIDANCE</span><span id="next-key-label">NEXT KEY · A</span></div><div class="virtual-keyboard" id="virtual-keyboard"></div></div>
-      <div class="trainer-bottom"><span class="trainer-coach" id="trainer-coach">✦ Prioritise precision over speed.</span><button class="subtle-btn" id="restart-training">↻ Restart</button></div>
+      <div class="trainer-bottom"><span class="trainer-coach" id="trainer-coach">✦ Prioritise precision over speed.</span><div class="trainer-tools"><button class="subtle-btn" id="blur-toggle" type="button" aria-pressed="false">◐ Blur typed text: Off</button><button class="subtle-btn" id="restart-training">↻ Restart</button></div></div>
     </div>
     <div class="editor-workspace hidden" id="trainer-editor"><div class="trainer-eyebrow" id="editor-eyebrow">EDITOR GYM</div><h1 id="editor-title">Fix the code</h1><p class="trainer-description" id="editor-description"></p><div class="editor-instruction" id="editor-instruction"></div><div class="editor-terminal"><div class="editor-terminal-header"><span class="terminal-light red"></span><span class="terminal-light yellow"></span><span class="terminal-light green"></span><span id="editor-filename">main.java</span><span class="terminal-hint">TAB: 4 SPACES · PASTE DISABLED</span></div><textarea id="editor-input" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea></div><div class="editor-bottom"><span id="editor-feedback" role="status">Tip: use Home, End, Ctrl/Cmd + arrows and keyboard selection.</span><button class="primary-btn" id="check-edit">Run check →</button></div></div>
     <div class="trainer-finish hidden" id="trainer-finish"><div class="finish-emblem">✓</div><div class="trainer-eyebrow" id="finish-eyebrow">SESSION COMPLETE</div><h1 id="finish-title">Nicely done.</h1><p id="finish-description">Every focused session adds up.</p><div class="finish-stats" id="finish-stats"></div><div class="finish-coaching" id="finish-coaching"></div><div id="finish-share" class="share-actions hidden"><button class="primary-btn" id="share-result">Share my score ↗</button><button class="secondary-btn" id="download-card">Save score card ↓</button></div><div class="finish-actions"><button class="secondary-btn" id="finish-exit">Return to dashboard</button><button class="primary-btn" id="finish-next">Keep training →</button></div></div>

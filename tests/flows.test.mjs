@@ -15,7 +15,7 @@ async function app(initial=null,clipboard=true){
   return{ok:true,json:async()=>saved};
  };
  if(clipboard)Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async x=>{copied=x;}}});
- for(const file of ['engine.js','curriculum.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
+ for(const file of ['engine.js','curriculum.js','advanced.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
  await new Promise(r=>setTimeout(r,10));
  const click=sel=>{const el=w.document.querySelector(sel);assert.ok(el,`Missing ${sel}`);el.click();return el;};
  const finishTyping=()=>{
@@ -83,4 +83,49 @@ test('a daily Java first answer survives reload and cannot be changed',async t=>
  assert.equal(b.w.document.querySelectorAll('[data-answer]').length,0);
  b.click('[data-flow="finish-learning"]');await b.tick();
  assert.equal(b.saved.daily[0].knowledge,false);
+});
+
+test('random-word test supports fresh prompts, blur focus and Caps Lock warning',async t=>{
+ const a=await app();t.after(()=>a.dom.window.close());
+ a.click('[data-view="wordtest"]');
+ const d=a.w.document;
+ const preview=d.getElementById('wordtest-preview');
+ const original=preview.textContent;
+ assert.equal(original.split(' ').length,50);
+ a.click('#wordtest-refresh');
+ assert.notEqual(preview.textContent,original);
+ a.click('#wordtest-start');
+ const typing=d.getElementById('typing-capture');
+ assert.equal(d.getElementById('training-title').textContent,'Random words');
+ a.click('#blur-toggle');
+ assert.equal(d.getElementById('blur-toggle').getAttribute('aria-pressed'),'true');
+ const target=d.getElementById('typing-prompt').textContent;
+ const firstSpace=target.indexOf(' ');
+ for(const ch of target.slice(0,firstSpace+1)){typing.value+=ch;typing.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
+ assert.ok(d.querySelector('.prompt-blurred'));
+ const capsOn=new a.w.KeyboardEvent('keydown',{key:'a'});
+ Object.defineProperty(capsOn,'getModifierState',{value:()=>true});
+ typing.dispatchEvent(capsOn);
+ assert.equal(d.getElementById('caps-lock-warning').classList.contains('hidden'),false);
+ const capsOff=new a.w.KeyboardEvent('keyup',{key:'a'});
+ Object.defineProperty(capsOff,'getModifierState',{value:()=>false});
+ typing.dispatchEvent(capsOff);
+ assert.equal(d.getElementById('caps-lock-warning').classList.contains('hidden'),true);
+ for(const ch of target.slice(firstSpace+1)){typing.value+=ch;typing.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
+ await a.tick();
+ assert.equal(a.saved.history.at(-1).kind,'wordtest');
+ assert.equal(a.saved.settings.blurCompleted,true);
+ assert.deepEqual(a.errors,[]);
+});
+test('advanced Java lessons appear before foundation refreshers and support fresh scenarios',async t=>{
+ const a=await app();t.after(()=>a.dom.window.close());
+ a.click('[data-view="java"]');
+ const grid=a.w.document.getElementById('advanced-grid');
+ assert.match(grid.textContent,/Strategy/);
+ assert.match(grid.textContent,/Allocation-aware/);
+ a.click('[data-flow="java-open"][data-id="java-34"]');
+ const snippet=a.w.document.getElementById('trainer-learning').textContent;
+ assert.match(snippet,/ring buffer/i);
+ assert.match(snippet,/prealloc|memory ordering|backpressure/i);
+ assert.deepEqual(a.errors,[]);
 });
