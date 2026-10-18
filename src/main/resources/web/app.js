@@ -2,6 +2,8 @@
 'use strict';
 const E = window.DevFlowEngine;
 const Advanced = window.DevFlowAdvanced;
+const Coach = window.DevFlowCoaching;
+const Performance = window.DevFlowPerformance;
 const $ = id => document.getElementById(id);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -79,7 +81,21 @@ let liveTicker = null;
 let dailyPlan = null;
 let projectInfo = {active:null,sessions:[]};
 let wordtestSample = '';
-function makeWordtest(){wordtestSample=Advanced.generateWords(Number($('wordtest-count').value),{numbers:$('wordtest-numbers').checked,punctuation:$('wordtest-punctuation').checked});$('wordtest-preview').textContent=wordtestSample;}
+let performanceCurrent = null,performanceAnswered = false;
+function typingCoach(){return Coach.analyzeTyping(state.history,state.weak,state.settings.goalWpm);}
+function makeWordtest(){
+ const focus=$('wordtest-mode').value==='focus'?typingCoach().focusKeys:[];
+ wordtestSample=Advanced.generateWords(Number($('wordtest-count').value),{numbers:$('wordtest-numbers').checked,punctuation:$('wordtest-punctuation').checked,focusKeys:focus});
+ $('wordtest-preview').textContent=wordtestSample;
+}
+function startWordtest(){
+ const useFocus=$('wordtest-mode').value==='focus'&&typingCoach().focusKeys.length>0;
+ if($('wordtest-mode').value==='focus'&&!useFocus)toast('No missed-key history yet; starting a normal random-word test.');
+ experience?.cancel();makeWordtest();
+ const count=Number($('wordtest-count').value);
+ runTyping({id:'wordtest-'+Date.now(),title:useFocus?'Weak-key word practice':'Random words',target:wordtestSample,wordCount:count,description:'Type with the correct fingers. Raw mistakes count even after correction.'},useFocus?'wordtest-focus':'wordtest');
+}
+function startFocusedWordtest(){$('wordtest-mode').value='focus';makeWordtest();startWordtest();}
 function projectTags() { const a=projectInfo.active;return a && a.repo ? {sessionId:a.id,projectId:a.repo.id,project:a.repo.name} : {}; }
 async function refreshProject(){try{const res=await fetch('/api/project');if(res.ok)projectInfo=await res.json();}catch{}renderProjects();}
 
@@ -123,10 +139,13 @@ function go(view) {
   experience?.cancel();
   currentView=view;
   $$('.view').forEach(node=>node.classList.toggle('active-view',node.id==='view-'+view));
-  $$('.nav-item').forEach(node=>node.classList.toggle('active',node.dataset.view===view));
+  $('.nav-item').forEach(node=>node.classList.toggle('active',node.dataset.view===view));
+  const activeNav=$('.nav-item').find(node=>node.dataset.view===view);
+  const parentDetails=activeNav?.closest?.('details');if(parentDetails)parentDetails.open=true;
   $('page-crumb').textContent=titleFor(view);
   $('sidebar').classList.remove('open');
   if (view==='insights') renderInsights();
+  if (view==='performance') renderPerformance();
   if (view==='handicap') renderHandicap();
   if (view==='projects') refreshProject();
   window.scrollTo({top:0,behavior:'instant'});
@@ -167,6 +186,12 @@ function renderDashboard(){
  $('lesson-progress-bar').style.width=100*mastered/LESSONS.length+'%';
  barChart($('mini-chart'),state.history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-7));
  $('progress-headline').textContent=ds.count?`${ds.count} completed session${ds.count!==1?'s':''}`:'Your journey starts here';
+ const coaching=typingCoach();
+ $('home-coach-title').textContent=coaching.title;
+ $('home-coach-advice').textContent=coaching.advice;
+ $('home-typing-summary').textContent=coaching.count?
+   coaching.count+' word tests · '+coaching.avgWpm+' average WPM · '+coaching.avgAccuracy+'% raw accuracy':
+   'Your first random-word test will establish your baseline.';
  $('progress-description').textContent=ds.count?`${ds.minutes} minutes of focused training so far.`:'Complete a practice session to establish your baseline.';
 }
 function renderAcademy(){
@@ -235,7 +260,16 @@ function renderSettings(){
  $('setting-keyboard').checked=state.settings.showKeyboard;
  $('setting-blur').checked=!!state.settings.blurCompleted;
 }
-function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();experience?.render();}
+function renderWordtestCoach(){
+ const data=typingCoach();
+ $('wordtest-coach-title').textContent=data.title;
+ $('wordtest-coach-advice').textContent=data.advice;
+ $('wordtest-coach-evidence').textContent=data.evidence+(data.missed.length?' Most missed keys by raw count: '+data.missed.map(k=>k.label+' ('+k.count+')').join(', ')+'. Counts are not error rates.':'');
+ const metrics=[['RECENT AVERAGE WPM',data.avgWpm??'—'],['RAW ACCURACY',data.avgAccuracy===null?'—':data.avgAccuracy+'%'],['BEST NORMAL TEST',data.bestWpm??'—'],['COMPLETED TESTS',data.count]];
+ $('wordtest-metrics').innerHTML=metrics.map(([label,value])=>'<div class="insight-stat"><span>'+label+'</span><strong>'+value+'</strong></div>').join('');
+ $('wordtest-coach-action').textContent=data.next+' →';
+}
+function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();renderWordtestCoach();renderPerformance();experience?.render();}
 
 function weakTarget() {
  const focus = topWeak(3).map(([k])=>k.toLowerCase());
