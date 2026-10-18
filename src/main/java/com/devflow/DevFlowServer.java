@@ -111,7 +111,7 @@ public final class DevFlowServer {
                     send(ex, 405, "Method not allowed", "text/plain"); return;
                 }
                 if ("/".equals(path)) path = "/index.html";
-                if (!(path.equals("/index.html") || path.equals("/styles.css") || path.equals("/app.js") || path.equals("/engine.js") || path.equals("/curriculum.js") || path.equals("/challenge.js") || path.equals("/experience.js") || path.equals("/favicon.svg") || path.equals("/manifest.webmanifest") || path.equals("/sw.js"))) {
+                if (!(path.equals("/index.html") || path.equals("/styles.css") || path.equals("/app.js") || path.equals("/engine.js") || path.equals("/curriculum.js") || path.equals("/advanced.js") || path.equals("/challenge.js") || path.equals("/experience.js") || path.equals("/favicon.svg") || path.equals("/manifest.webmanifest") || path.equals("/sw.js"))) {
                     send(ex, 404, "Not found", "text/plain"); return;
                 }
                 InputStream in = DevFlowServer.class.getResourceAsStream("/web" + path);
