@@ -31,7 +31,7 @@ body{background:#101219}button,a,input,textarea{ -webkit-tap-highlight-color:tra
 .wordtest-controls input{accent-color:var(--lav)}
 .wordtest-preview{font:20px/2 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--text);letter-spacing:.3px;overflow-wrap:anywhere}
 .caps-lock-warning{border:1px solid #c89a55;color:#ffdc9d;background:#3d3025;padding:10px 16px;border-radius:9px;margin:8px auto 0;text-align:center;max-width:460px;font-size:12px;font-weight:750}
-.typing-prompt.blur-completed .prompt-correct{filter:blur(3.5px);opacity:.35}
+.typing-prompt.blur-completed .prompt-blurred{filter:blur(3.5px);opacity:.35}
 .trainer-tools{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 #blur-toggle[aria-pressed="true"]{color:var(--lav)}
 @media(max-width:610px){.advanced-heading{flex-direction:column;align-items:stretch}.wordtest-panel{padding:20px}.wordtest-preview{font-size:16px}.trainer-tools{gap:8px}}
