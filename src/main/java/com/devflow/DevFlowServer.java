@@ -91,7 +91,7 @@ public final class DevFlowServer {
                 h.set("Content-Security-Policy", "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
                 if ("/api/health".equals(path)) {
                     if (!"GET".equals(ex.getRequestMethod())) { send(ex, 405, "Method not allowed", "text/plain"); return; }
-                    send(ex, 200, "{\"ok\":true,\"app\":\"DevFlow\",\"version\":\"2.1.0\"}", "application/json");
+                    send(ex, 200, "{\"ok\":true,\"app\":\"DevFlow\",\"version\":\"2.2.0\"}", "application/json");
                     return;
                 }
                 if ("/api/project".equals(path)) {
