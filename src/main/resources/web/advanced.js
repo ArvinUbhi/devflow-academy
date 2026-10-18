@@ -220,9 +220,12 @@
     let state=(seed===undefined?Math.floor(Math.random()*0xffffffff):Number(seed))>>>0;
     if(!state)state=0x9e3779b9;
     const next=()=>{state^=state<<13;state^=state>>>17;state^=state<<5;return state>>>0;};
+    const focus=Array.isArray(settings.focusKeys)?settings.focusKeys.filter(k=>typeof k==='string'&&k.length===1&&/[a-z]/i.test(k)).map(k=>k.toLowerCase()):[];
+    const targeted=focus.length?words.filter(word=>focus.some(key=>word.includes(key))):[];
     const result=[];
     for(let i=0;i<size;i++){
-      let word=words[next()%words.length];
+      const bank=targeted.length&&i%4!==0?targeted:words;
+      let word=bank[next()%bank.length];
       if(settings.numbers&&i>0&&i%12===0)word=String(10+(next()%989));
       if(settings.punctuation&&i>0&&i%9===0)word+=i%18===0?'.':',';
       result.push(word);
