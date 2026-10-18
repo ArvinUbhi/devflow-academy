@@ -19,7 +19,7 @@ test('UI initialises and a three-part daily training session advances', async ()
       nodes.set(id,{
         id,value:'',textContent:'',innerHTML:'',style:{},dataset:{},checked:true,
         classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x),toggle:(x,force)=>{if(force===undefined? !classes.has(x):force)classes.add(x);else classes.delete(x);}},
-        listeners:{},addEventListener(type,fn){this.listeners[type]=fn;},focus(){},blur(){},
+        listeners:{},addEventListener(type,fn){this.listeners[type]=fn;},setAttribute(name,value){this[name]=value;},focus(){},blur(){},
         closest(){return null;},querySelectorAll(){return [];}
       });
     }
@@ -27,7 +27,7 @@ test('UI initialises and a three-part daily training session advances', async ()
   };
   let saved=null;
   const context={
-    window:{DevFlowEngine:E,DevFlowJava:require('../src/main/resources/web/curriculum.js'),DevFlowChallenge:require('../src/main/resources/web/challenge.js'),scrollTo(){}},
+    window:{DevFlowEngine:E,DevFlowJava:require('../src/main/resources/web/curriculum.js'),DevFlowAdvanced:require('../src/main/resources/web/advanced.js'),DevFlowChallenge:require('../src/main/resources/web/challenge.js'),scrollTo(){}},
     document:{getElementById:node,querySelector(){return null;},querySelectorAll(){return [];},addEventListener(type,fn){(docListeners[type]??=[]).push(fn);}},
     fetch:async(path,opts)=>path==='/api/state'&&(!opts||opts.method!=='PUT')?{ok:true,json:async()=>null}:{ok:true,json:async()=>({saved:true})},
     localStorage:{setItem(k,v){saved=v},getItem(){return saved}},
