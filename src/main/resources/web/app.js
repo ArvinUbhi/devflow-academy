@@ -507,11 +507,69 @@ function checkEditor(){
 function renderPerformance(){
  const lessons=Advanced.lessons.filter(x=>x.chapter==='Low latency / GC'||x.chapter==='Concurrency');
  const grid=$('performance-grid');if(!grid)return;
- grid.innerHTML=lessons.map(l=>'<button class="java-card" data-flow="java-open" data-id="'+l.id+'"><div class="java-card-top"><span class="micro-label">'+esc(l.chapter)+'</span><span class="java-check">↗</span></div><h3>'+esc(l.title)+'</h3><p>'+esc(l.why)+'</p><div class="java-card-footer"><span>LEARN · TYPE · RECALL</span><span>~5 MIN</span></div></button>').join('');
+ grid.innerHTML=lessons.map(l=>'<button class="java-card" data-flow="java-open" data-id="'+l.id+'"><div class="java-card-top"><span class="micro-label">'+esc(l.chapter)+'</span><span class="java-check">↗</span></div><h3>'+esc(l.title)+'</h3><p>'+esc(l.why)+'</p><div class="java-card-footer"><span>TYPE · RECALL · EXPLAIN</span><span>~5 MIN</span></div></button>').join('');
+ const cases=$('performance-study-cards');if(!cases)return;
+ cases.innerHTML=Performance.cases.map(l=>{
+   const progress=state.performance?.[l.id];
+   return '<button class="java-card perf-study-card" data-performance-open="'+l.id+'"><div class="java-card-top"><span class="micro-label">'+esc(l.track)+'</span><span class="java-check">'+(progress?.correct?'✓':'↗')+'</span></div><h3>'+esc(l.title)+'</h3><p>'+esc(l.situation)+'</p><div class="java-card-footer"><span>'+esc(progress?.correct?'UNDERSTANDING VERIFIED':'READ · TYPE · DECIDE')+'</span><span>~'+l.minutes+' MIN</span></div></button>';
+ }).join('');
+ if(performanceCurrent)renderPerformanceDetail();
+}
+function openPerformanceLesson(id){
+ const lesson=Performance.byId(id);if(!lesson)return;
+ performanceCurrent=id;performanceAnswered=false;
+ renderPerformanceDetail();
+ $('performance-lesson-detail').scrollIntoView?.({behavior:'smooth',block:'start'});
+}
+function renderPerformanceDetail(){
+ const lesson=Performance.byId(performanceCurrent),node=$('performance-lesson-detail');if(!node)return;
+ if(!lesson){node.classList.add('hidden');return;}
+ node.classList.remove('hidden');
+ const progress=state.performance?.[lesson.id];
+ const completed=progress?.attempts?'<p class="quiet-copy">Prior attempts: '+progress.attempts+' · '+(progress.correct?'Understood ✓':'Keep learning')+'. You can repeat the quiz to improve your understanding.</p>':'';
+ const options=lesson.options.map((option,i)=>'<button class="knowledge-option" data-performance-answer="'+i+'"><span>'+(i+1)+'</span>'+esc(option)+'</button>').join('');
+ node.innerHTML='<div class="card-heading"><span class="eyebrow">'+esc(lesson.track)+' · '+lesson.minutes+' MIN</span><button class="text-link" data-performance-close="1" aria-label="Close investigation">Close ✕</button></div>'+
+ '<h2>'+esc(lesson.title)+'</h2><h3>Situation</h3><p>'+esc(lesson.situation)+'</p>'+
+ '<h3>What you need to understand</h3><p>'+esc(lesson.learn)+'</p>'+
+ '<h3>How to investigate this for real</h3><ol class="performance-steps">'+lesson.steps.map(step=>'<li>'+esc(step)+'</li>').join('')+'</ol>'+
+ '<div class="performance-caution"><strong>A common mistake</strong><p>'+esc(lesson.trap)+'</p></div>'+
+ '<h3>Type the relevant Java pattern</h3><pre class="performance-code"><code>'+esc(lesson.code)+'</code></pre><p class="quiet-copy">'+esc(lesson.tip)+'</p>'+
+ '<button class="primary-btn" data-performance-type="'+lesson.id+'">Type this Java snippet →</button>'+
+ '<h3>Try the real tooling</h3><p>'+esc(lesson.setup)+'</p><pre class="performance-code"><code>'+esc(lesson.command)+'</code></pre>'+
+ '<p class="quiet-copy">Reference: <a target="_blank" rel="noopener noreferrer" href="'+esc(lesson.source)+'">Official documentation ↗</a></p>'+
+ '<div class="performance-question"><span class="eyebrow">ENGINEERING DECISION · FIRST ANSWER PER ATTEMPT</span><h3>'+esc(lesson.question)+'</h3><div class="knowledge-options" id="performance-answers">'+options+'</div><div class="performance-answer-feedback" id="performance-answer-feedback" role="status"></div>'+completed+'</div>';
+}
+function answerPerformance(index){
+ const lesson=Performance.byId(performanceCurrent);
+ if(!lesson||performanceAnswered||!Number.isInteger(index)||index<0||index>=lesson.options.length)return;
+ performanceAnswered=true;
+ const correct=index===lesson.answer,previous=state.performance?.[lesson.id]||{attempts:0,correct:false};
+ state.performance[lesson.id]={attempts:previous.attempts+1,correct:previous.correct||correct,last:nowISO()};
+ saveState();
+ const choices=$('performance-answers');
+ for(const button of choices.querySelectorAll('button'))button.disabled=true;
+ $('performance-answer-feedback').textContent=(correct?'Correct. ':'Not quite. Correct answer: '+lesson.options[lesson.answer]+'. ')+lesson.explanation;
+ renderPerformanceCardsOnly();
+}
+function renderPerformanceCardsOnly(){
+ const node=$('performance-study-cards');if(!node)return;
+ for(const button of node.querySelectorAll('[data-performance-open]')){
+   const progress=state.performance?.[button.dataset.performanceOpen];
+   const check=button.querySelector('.java-check');
+   if(check&&progress?.correct)check.textContent='✓';
+ }
 }
 function setupActions(){
  document.addEventListener('click',ev=>{
   const flow=ev.target.closest('[data-flow]');if(flow)return;
+  const perfOpen=ev.target.closest('[data-performance-open]');if(perfOpen){openPerformanceLesson(perfOpen.dataset.performanceOpen);return;}
+  const perfAnswer=ev.target.closest('[data-performance-answer]');if(perfAnswer){answerPerformance(Number(perfAnswer.dataset.performanceAnswer));return;}
+  const perfType=ev.target.closest('[data-performance-type]');if(perfType){
+    const lesson=Performance.byId(perfType.dataset.performanceType);
+    if(lesson){experience?.cancel();runTyping({id:'perf-'+lesson.id,lessonId:lesson.id,title:'Type: '+lesson.title,target:lesson.code,description:lesson.tip},'perf-type');}
+    return;
+  }
+  const perfClose=ev.target.closest('[data-performance-close]');if(perfClose){performanceCurrent=null;$('performance-lesson-detail').classList.add('hidden');return;}
   const nav=ev.target.closest('[data-view]');if(nav){go(nav.dataset.view);return;}
   const goto=ev.target.closest('[data-go]');if(goto){go(goto.dataset.go);return;}
   const action=ev.target.closest('[data-action]');if(action&&action.dataset.action==='assessment'){startAssessment();return;}
