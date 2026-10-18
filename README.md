@@ -4,7 +4,7 @@
 
 ## New in v2.1
 
-- **Advanced Java first:** 15 new Java 8-compatible lessons on Strategy, Factory, Builder, Adapter, Decorator, Observer, dependency injection, immutable value objects, concurrency and allocation-aware design. The original 24 foundation lessons remain accessible as refreshers.
+- **Advanced Java first:** 20 new Java 8-compatible lessons on Strategy, Factory, Builder, Adapter, Decorator, Observer, dependency injection, immutable value objects, concurrency and allocation-aware design. The original 24 foundation lessons remain accessible as refreshers.
 - **Low latency / GC track:** primitive hot loops, ring buffers, reusable buffers, volatile and CAS, cache locality and tail-latency trade-offs. These are teaching examples, **not promises of zero allocation or zero GC**; benchmark production code under representative load.
 - **Fresh generated scenarios:** seeded, offline variations of identifiers, values and outputs. New Daily Flow prompts from 19 October 2026 use advanced concepts and remain identical for all users on that UTC day. Earlier daily challenges keep their original content.
 - **Random-word typing test:** a Monkeytype-inspired test with 25/50/100 words, optional numbers and punctuation, replay and stored typing metrics.
@@ -15,7 +15,7 @@
 
 - **Daily Flow:** three short Java typing rounds and a comprehension check. Identical, versioned prompts for each UTC date, weighted accuracy/pace scoring, reload-and-resume and a saved first finish. Replays are practice and cannot replace that day's result.
 - **Score sharing:** spoiler-free Wordle-style tiles, native sharing or clipboard copy, a manual-copy fallback, and downloadable SVG score cards. Sharing is always initiated by the user.
-- **24 foundation Java lessons plus 15 advanced modules:** learn the concept, type a working example, recall a small pattern without copying, and explain the behaviour. Covers fundamentals, flow control, collections, objects, reliability and Java 8 streams/lambdas.
+- **24 foundation Java lessons plus 20 advanced modules:** learn the concept, type a working example, recall a small pattern without copying, and explain the behaviour. Covers fundamentals, flow control, collections, objects, reliability and Java 8 streams/lambdas.
 - **Real mastery:** at least 94% typing accuracy, unassisted recall and a correct first comprehension answer. Hints support learning; spaced reviews return after 1–14 days.
 - **IntelliJ plugin:** the full app inside a tool window, bundled local server, shared local progress, automatic startup, browser fallback and proper process/browser disposal. See [installation](intellij-plugin/README.md).
 - **Deliberate practice UX:** a focused daily entry point, Java chapter filters, practice streaks, earned XP, keyboard focus states, reduced-motion support and UK/US symbol-key guidance.
@@ -69,7 +69,7 @@ Or call each command without installing globally: `npx --yes github:ArvinUbhi/de
 - Personalized weak-key drills and guided daily training.
 - Three-part official typing handicap assessments with rolling best-3-of-8 index (0 best, 54 worst).
 - Dark responsive interface with dashboards, speed charts, accuracy, activity history and repo-linked activity.
-- Local JSON progress (up to 10,000 recent drills, 1,000 daily results and 39 Java mastery records) and repository-session history (up to 10,000 sessions), with manual backup/export and restore.
+- Local JSON progress (up to 10,000 recent drills, 1,000 daily results and 44 Java mastery records) and repository-session history (up to 10,000 sessions), with manual backup/export and restore.
 - No external resources at runtime. Content stays on the device running Java.
 
 ### How handicap is calculated
