@@ -53,7 +53,7 @@
     ['Volatile and visibility','Concurrency','volatile makes writes visible to other threads and restricts certain reorderings. It does not turn compound read-modify-write operations into atomic operations.','Use an AtomicInteger or a lock when you need a safe increment; volatile++ is not atomic.',
       'class Signal { volatile boolean ready; }\nSignal signal = new Signal();\nsignal.ready = true;\nSystem.out.println(signal.ready);','true',
       'Is a volatile counter++ operation atomic?',['Yes, on every JVM','Only with Java 8','No, it is a read-modify-write'],2,
-      'Declare a volatile shutdown flag.','volatile boolean running = true;','Distinguish visibility from atomicity.','signal',['signal','state','flag']],
+      'Declare a class holding a volatile shutdown flag.','class Flags { volatile boolean running = true; }','Distinguish visibility from atomicity.','signal',['signal','state','flag']],
     ['CAS and atomic counters','Concurrency','Compare-and-set supports lock-free coordination for individual atomic variables. Contention and retry loops can still cause large tail latencies.','Atomic operations are not wait-free by default; consider LongAdder for contended statistics, not sequence publication.',
       'java.util.concurrent.atomic.AtomicLong sequence = new java.util.concurrent.atomic.AtomicLong();\nSystem.out.println(sequence.incrementAndGet());','1',
       'What does AtomicLong guarantee for incrementAndGet?',['An atomic increment','Zero GC in every program','No contention'],0,
