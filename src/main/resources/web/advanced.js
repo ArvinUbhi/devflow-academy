@@ -79,15 +79,88 @@
       recall:{prompt:x[9],code:x[10]},tip:x[11],rename:x[12],names:x[13],
       shortcut:{name:shortcut[0],windows:shortcut[1],mac:shortcut[2]},minutes:5,advanced:true};
   });
-  // Rename identifiers, never string literals or Java keywords. The exact replacement token
-  // is authored and validated for each lesson; consumers can reproduce variants offline.
+  // Each seed changes the identifiers AND meaningful data in the example, while
+  // retaining the same validated teaching objective and expected Java behaviour.
   function variant(lesson,seed){
-    const alternatives=lesson.names||[lesson.rename];
-    const normalized=(Math.trunc(Number(seed)||0)>>>0);
-    const replacement=alternatives[normalized%alternatives.length];
-    const pattern=new RegExp('\\b'+lesson.rename+'\\b','g');
-    const update=code=>code.replace(pattern,replacement);
-    return {...lesson,code:update(lesson.code),recall:{...lesson.recall,code:update(lesson.recall.code)}};
+    const n=(Math.trunc(Number(seed)||0)>>>0);
+    const choices=lesson.names||[lesson.rename];
+    const base=choices[n%choices.length];
+    const alias=base+'_'+Math.floor(n/choices.length).toString(36);
+    const variable=new RegExp('\\b'+lesson.rename+'\\b','g');
+    let code=lesson.code, output=lesson.output, recall=lesson.recall.code;
+    const change=(oldText,newText)=>{if(!code.includes(oldText))throw Error('Bad challenge template: '+lesson.id);code=code.replace(oldText,newText);};
+    const pick=items=>items[n%items.length];
+    switch(lesson.id){
+      case 'java-25':{
+        const threshold=90+n%60,discount=3+n%8,offer=threshold+10+n%35;
+        change('amount >= 100 ? amount - 5 : amount', 'amount >= '+threshold+' ? amount - '+discount+' : amount');
+        change('applyAsInt(120)','applyAsInt('+offer+')');
+        output=String(offer-discount);
+        break;
+      }
+      case 'java-26':change('events.add("accepted")','events.add("'+pick(['queued','processed','filled','confirmed','validated'])+'")');break;
+      case 'java-27':{
+        const path=pick(['/prices','/trades','/orders','/quotes','/events']);
+        change('append("/orders")','append("'+path+'")');
+        output='GET '+path;
+        break;
+      }
+      case 'java-28':{
+        const milli=1200+(n%75)*100;
+        change('return 3300;','return '+milli+';');
+        output=(milli/1000).toFixed(1);
+        break;
+      }
+      case 'java-29':{
+        const word=pick(['trade','order','quote','event','price']);
+        change('decorated.apply("order")','decorated.apply("'+word+'")');
+        output='['+word+']';break;
+      }
+      case 'java-30':{
+        const event=pick(['filled','placed','received','validated','settled']);
+        change('listener.accept("filled")','listener.accept("'+event+'")');
+        output='audit:'+event;break;
+      }
+      case 'java-31':{
+        const value=10+n%900;change('() -> 42','() -> '+value);output=String(value);break;
+      }
+      case 'java-32':{
+        const value=150+n%1900;change('new Price(250)','new Price('+value+')');
+        recall=recall.replace('= 250','= '+value);
+        output=String(value);break;
+      }
+      case 'java-33':{
+        const baseValue=80+n%800;
+        change('{100, 101, 102}','{'+baseValue+', '+(baseValue+1)+', '+(baseValue+2)+'}');
+        output=String(baseValue*3+3);break;
+      }
+      case 'java-34':{
+        const value=20+n%250;change('] = 42;','] = '+value+';');output=String(value);break;
+      }
+      case 'java-35':{
+        const word=pick(['next','quote','tick','trade','event']);
+        change('append("next")','append("'+word+'")');output=String(word.length);break;
+      }
+      case 'java-36':{
+        const value=n%2===0?'true':'false';
+        change('signal.ready = true;','signal.ready = '+value+';');output=value;break;
+      }
+      case 'java-37':{
+        const start=n%900;
+        change('new java.util.concurrent.atomic.AtomicLong();','new java.util.concurrent.atomic.AtomicLong('+start+');');
+        output=String(start+1);break;
+      }
+      case 'java-38':{
+        const first=10+n%40;change('{10, 20, 30}','{'+first+', '+(first+10)+', '+(first+20)+'}');
+        output=String(first*3+30);break;
+      }
+      case 'java-39':{
+        const high=600+n%2000;
+        change('200, 900, 500','200, '+high+', 500');output=String(high);break;
+      }
+    }
+    return {...lesson,code:code.replace(variable,alias),output,
+      recall:{...lesson.recall,code:recall.replace(variable,alias)}};
   }
   const words=('about above accept action actor adapt agile alarm alpha always amount anchor answer apply array aside atomic '+
     'balance basic become before begin behind below bench better binary block branch brave break bridge browser buffer build '+
