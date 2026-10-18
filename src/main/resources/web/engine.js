@@ -68,7 +68,7 @@
     if (input.weak && typeof input.weak === 'object' && !Array.isArray(input.weak)) base.weak = Object.fromEntries(Object.entries(input.weak).filter(([k,v])=>k.length===1 && Number.isFinite(v) && v>=0).slice(0,100));
     if(input.java && typeof input.java==='object' && !Array.isArray(input.java)) {
       for(const [id,value] of Object.entries(input.java)) {
-        if(!/^java-([1-9]|[12]\d|3\d)$/.test(id)||!value||typeof value!=='object')continue;
+        if(!/^java-([1-9]|[12]\d|3\d|4[0-4])$/.test(id)||!value||typeof value!=='object')continue;
         base.java[id]={mastered:value.mastered===true,attempts:clamp(Number(value.attempts)||0,0,100000),due:typeof value.due==='string'&&Number.isFinite(Date.parse(value.due))?value.due:null,last:typeof value.last==='string'?value.last.slice(0,30):null};
       }
     }
