@@ -20,7 +20,7 @@ test('standalone jar serves UI, health and persists state safely',async t=>{
  const home=await mkdtemp(join(tmpdir(),'devflow-test-'));
  const {child,url}=await launch(home);
  t.after(async()=>{child.kill('SIGTERM');await rm(home,{recursive:true,force:true});});
- const health=await fetch(url+'/api/health'); assert.equal(health.status,200);const healthInfo=await health.json();assert.equal(healthInfo.ok,true);assert.equal(healthInfo.version,'2.1.0');
+ const health=await fetch(url+'/api/health'); assert.equal(health.status,200);const healthInfo=await health.json();assert.equal(healthInfo.ok,true);assert.equal(healthInfo.version,'2.2.0');
  for(const file of ['app.js','engine.js','curriculum.js','advanced.js','coaching.js','performance-coach.js','challenge.js','experience.js','styles.css']){
   const served=await fetch(url+'/'+file);assert.equal(served.status,200,file);
   assert.equal(await served.text(),await readFile(new URL('../src/main/resources/web/'+file,import.meta.url),'utf8'),'bundled resource must match source: '+file);
