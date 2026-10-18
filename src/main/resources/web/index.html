@@ -12,6 +12,8 @@
   <script src="/engine.js" defer></script>
   <script src="/curriculum.js" defer></script>
   <script src="/advanced.js" defer></script>
+  <script src="/coaching.js" defer></script>
+  <script src="/performance-coach.js" defer></script>
   <script src="/challenge.js" defer></script>
   <script src="/experience.js" defer></script>
   <script src="/app.js" defer></script>
@@ -23,8 +25,8 @@
     <div class="sidebar-title">START HERE</div>
     <nav class="nav-list" aria-label="Main navigation">
       <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span> Overview</button>
-      <button class="nav-item" data-view="daily"><span class="nav-icon">◈</span> Daily challenge <span class="nav-new">DAILY</span></button>
       <button class="nav-item" data-view="wordtest"><span class="nav-icon">⌨</span> Typing test</button>
+      <button class="nav-item" data-view="daily"><span class="nav-icon">◈</span> Daily challenge <span class="nav-new">DAILY</span></button>
     </nav>
     <div class="sidebar-title second-label">JAVA ENGINEERING</div>
     <nav class="nav-list" aria-label="Java engineering">
@@ -61,7 +63,11 @@
 
     <main id="main-content">
       <section id="view-dashboard" class="view active-view">
-        <div class="welcome-heading"><div><p class="eyebrow">YOUR TRAINING OVERVIEW <span class="sparkle">✧</span></p><h1>A little practice.<br>A lot more flow<span class="violet">.</span></h1><p class="page-description">Type with intent. Learn Java. Come back a little better.</p></div><div class="date-pill" id="today-pill"></div></div>
+        <div class="welcome-heading"><div><p class="eyebrow">YOUR TRAINING OVERVIEW <span class="sparkle">✧</span></p><h1>Type better.<br>Engineer smarter<span class="violet">.</span></h1><p class="page-description">Start with your typing. Learn advanced Java through practical engineering challenges.</p></div><div class="date-pill" id="today-pill"></div></div>
+        <div class="typing-home-hero panel">
+          <div class="typing-home-copy"><p class="eyebrow">YOUR MAIN TRAINING GROUND · TOUCH TYPING</p><h2>Build speed that lasts.</h2><p>Fresh, random words every round. Measure WPM and raw accuracy, then get a specific recommendation based on your results.</p><div class="flow-actions"><button class="primary-btn" id="home-typing-start">Start typing test →</button><button class="secondary-btn" id="home-focus-start">Train missed keys</button></div></div>
+          <div class="typing-home-coach"><span class="eyebrow">YOUR TYPING COACH</span><h3 id="home-coach-title">Establish your baseline</h3><p id="home-coach-advice">Complete a test to receive personalised typing advice.</p><p class="quiet-copy" id="home-typing-summary">No tests completed yet</p></div>
+        </div>
         <div class="flow-hero panel">
           <div class="flow-hero-copy"><span class="eyebrow"><span class="live-dot"></span> THE DAILY FLOW <span id="home-daily-number"></span></span><h2>Three rounds.<br>One daily ritual.</h2><p>A few minutes of Java, a keyboard, and a score worth sharing. Same challenge for everyone.</p><div class="flow-actions"><button class="primary-btn" id="home-challenge">Find today's flow <span>→</span></button><button class="text-link" data-go="java">Explore the Java path ↗</button></div><div class="flow-meta"><span>⌨ Typing comes first</span><span>◆ Learn something real</span><span>↗ Share your progress</span></div></div>
           <div class="flow-art" aria-hidden="true"><div class="flow-art-top"><span>daily.java</span><span>● ● ●</span></div><div class="code-art"><span class="code-purple">while</span> (learning) {<br>  <span class="code-mint">practise</span>();<br>  progress<span class="code-purple">++</span>;<br>}</div><div class="tile-art"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="art-caption">ONE GOOD HABIT. EVERY DAY.</span></div>
@@ -113,12 +119,17 @@
       </section>
       <section id="view-wordtest" class="view">
         <div class="page-heading"><div><p class="eyebrow">TOUCH TYPING · FRESH WORDS EACH ROUND</p><h1>Typing test<span class="violet">.</span></h1><p class="page-description">A random-word typing test inspired by Monkeytype. Train without memorising prompts.</p></div></div>
-        <div class="panel wordtest-panel"><div class="wordtest-controls"><label>Length <select id="wordtest-count"><option value="25">25 words</option><option value="50" selected>50 words</option><option value="100">100 words</option></select></label><label class="wordtest-check"><input type="checkbox" id="wordtest-punctuation"> Punctuation</label><label class="wordtest-check"><input type="checkbox" id="wordtest-numbers"> Numbers</label></div>
-        <p class="eyebrow">RANDOM SAMPLE PREVIEW</p><p class="wordtest-preview" id="wordtest-preview"></p><div class="flow-actions"><button id="wordtest-start" class="primary-btn">Start typing test →</button><button id="wordtest-refresh" class="secondary-btn">New words ↻</button></div><p class="quiet-copy">New words are generated locally. No account or network access required. Results appear in Insights.</p></div>
+        <div class="panel wordtest-panel"><div class="wordtest-controls"><label>Length <select id="wordtest-count"><option value="25">25 words</option><option value="50" selected>50 words</option><option value="100">100 words</option></select></label><label class="wordtest-check"><input type="checkbox" id="wordtest-punctuation"> Punctuation</label><label class="wordtest-check"><input type="checkbox" id="wordtest-numbers"> Numbers</label><label>Training focus <select id="wordtest-mode"><option value="standard">Normal random words</option><option value="focus">My most-missed keys</option></select></label></div>
+        <p class="eyebrow">RANDOM SAMPLE PREVIEW</p><p class="wordtest-preview" id="wordtest-preview"></p><div class="flow-actions"><button id="wordtest-start" class="primary-btn">Start typing test →</button><button id="wordtest-refresh" class="secondary-btn">New words ↻</button></div><p class="quiet-copy">New words are generated locally. No account or network access required. Normal and focused practice are tracked separately, so targeted drills do not inflate your regular speed record.</p></div>
+        <div class="panel typing-coach-panel" aria-live="polite"><span class="eyebrow">EVIDENCE-LED TYPING COACH</span><h2 id="wordtest-coach-title">Establish your typing baseline</h2><p id="wordtest-coach-advice"></p><p class="quiet-copy" id="wordtest-coach-evidence"></p><div class="typing-summary-metrics" id="wordtest-metrics"></div><div class="flow-actions"><button class="secondary-btn" id="wordtest-coach-action">Start a focused drill →</button></div></div>
       </section>
       <section id="view-performance" class="view">
   <div class="page-heading"><div><p class="eyebrow">PERFORMANCE ENGINEERING · JAVA 8+</p><h1>Low-latency lab<span class="violet">.</span></h1><p class="page-description">Work through allocation profiles, JMH benchmarking, GC pauses and trading-system tail latency. Learn the methodology before tuning.</p></div></div>
   <div class="panel performance-intro"><h2>Measure first. Optimise second.</h2><p>Zero-GC is a measured steady-state objective, not a JVM guarantee. Compare throughput, p99/p99.9 latency, allocations per operation and GC pauses under repeatable workloads.</p></div>
+  <div class="performance-study-heading"><div><span class="eyebrow">LEARN · TYPE · DECIDE</span><h2>Real engineering investigations</h2><p class="page-description">Read a real problem, learn what to measure, type a useful Java snippet and answer a decision question. Your first answer is saved.</p></div></div>
+  <div id="performance-study-cards" class="java-grid"></div>
+  <section id="performance-lesson-detail" class="panel performance-lesson-detail hidden" aria-live="polite"></section>
+  <div class="performance-study-heading"><div><span class="eyebrow">PRACTICE LIBRARY</span><h2>More advanced Java typing exercises</h2></div></div>
   <div id="performance-grid" class="java-grid"></div>
   <section class="panel performance-intro"><h2>Benchmark workflow</h2><p>1. Establish a baseline using JMH with warm-up, forks and realistic inputs. 2. Capture allocation hotspots with Java Flight Recorder. 3. Remove avoidable boxing and hot-path allocation. 4. Repeat under load and compare tail latency. 5. Inspect GC logs before changing collector flags.</p><p class="quiet-copy">JMH and JFR require a compatible local JDK and tooling; this module teaches the workflow without claiming to execute a profiler inside the browser.</p></section>
 </section>
@@ -188,7 +199,7 @@
       <div class="trainer-bottom"><span class="trainer-coach" id="trainer-coach">✦ Prioritise precision over speed.</span><div class="trainer-tools"><button class="subtle-btn" id="blur-toggle" type="button" aria-pressed="false">◐ Blur typed text: Off</button><button class="subtle-btn" id="restart-training">↻ Restart</button></div></div>
     </div>
     <div class="editor-workspace hidden" id="trainer-editor"><div class="trainer-eyebrow" id="editor-eyebrow">EDITOR GYM</div><h1 id="editor-title">Fix the code</h1><p class="trainer-description" id="editor-description"></p><div class="editor-instruction" id="editor-instruction"></div><div class="editor-terminal"><div class="editor-terminal-header"><span class="terminal-light red"></span><span class="terminal-light yellow"></span><span class="terminal-light green"></span><span id="editor-filename">main.java</span><span class="terminal-hint">TAB: 4 SPACES · PASTE DISABLED</span></div><textarea id="editor-input" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea></div><div class="editor-bottom"><span id="editor-feedback" role="status">Tip: use Home, End, Ctrl/Cmd + arrows and keyboard selection.</span><button class="primary-btn" id="check-edit">Run check →</button></div></div>
-    <div class="trainer-finish hidden" id="trainer-finish"><div class="finish-emblem">✓</div><div class="trainer-eyebrow" id="finish-eyebrow">SESSION COMPLETE</div><h1 id="finish-title">Nicely done.</h1><p id="finish-description">Every focused session adds up.</p><div class="finish-stats" id="finish-stats"></div><div class="finish-coaching" id="finish-coaching"></div><div id="finish-share" class="share-actions hidden"><button class="primary-btn" id="share-result">Share my score ↗</button><button class="secondary-btn" id="download-card">Save score card ↓</button></div><div class="finish-actions"><button class="secondary-btn" id="finish-exit">Return to dashboard</button><button class="primary-btn" id="finish-next">Keep training →</button></div></div>
+    <div class="trainer-finish hidden" id="trainer-finish"><div class="finish-emblem">✓</div><div class="trainer-eyebrow" id="finish-eyebrow">SESSION COMPLETE</div><h1 id="finish-title">Nicely done.</h1><p id="finish-description">Every focused session adds up.</p><div class="finish-stats" id="finish-stats"></div><div class="finish-coaching" id="finish-coaching"></div><div id="finish-share" class="share-actions hidden"><button class="primary-btn" id="share-result">Share my score ↗</button><button class="secondary-btn" id="download-card">Save score card ↓</button></div><div class="finish-actions"><button class="secondary-btn" id="finish-exit">Return to dashboard</button><button class="secondary-btn hidden" id="finish-focused">Practise missed keys →</button><button class="primary-btn" id="finish-next">Keep training →</button></div></div>
   </div>
 </div>
 <div id="share-dialog" class="share-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="share-dialog-title"><div class="panel"><h2 id="share-dialog-title">Your score, ready to share.</h2><p class="section-intro">Select and copy the card below, then send it to a friend.</p><textarea id="share-text" readonly aria-label="Shareable score"></textarea><button class="primary-btn" id="close-share">Done</button></div></div>
