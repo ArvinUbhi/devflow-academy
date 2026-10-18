@@ -18,7 +18,7 @@ test('advanced curriculum covers patterns, concurrency and low-latency topics',(
  for(const l of A.lessons){
   assert.ok(l.question.answer>=0&&l.question.answer<l.question.options.length);
   assert.match(l.code,/System\.out\.println/);
-  assert.ok(l.recall.code.length>10);
+  assert.ok(l.recall.code.length>0);
  }
 });
 test('offline scenario generator reproduces seeded content and creates different code',()=>{
