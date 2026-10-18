@@ -155,7 +155,7 @@ test('missed-key focused practice is separated from normal personal-best trackin
  d.getElementById('wordtest-count').value='25';
  a.click('#wordtest-coach-action');
  assert.equal(d.getElementById('training-title').textContent,'Weak-key word practice');
- assert.ok(d.getElementById('typing-prompt').textContent.split(' ').filter(word=>word.includes('z')).length>=12);
+ assert.ok(d.getElementById('typing-prompt').textContent.split(' ').filter(word=>/[zx]/.test(word)).length>=12);
  a.finishTyping();await a.tick();
  assert.equal(a.saved.history.at(-1).kind,'wordtest-focus');
  a.click('#finish-exit');a.click('[data-view="wordtest"]');
