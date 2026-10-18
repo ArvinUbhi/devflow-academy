@@ -15,7 +15,7 @@ async function app(initial=null,clipboard=true){
   return{ok:true,json:async()=>saved};
  };
  if(clipboard)Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async x=>{copied=x;}}});
- for(const file of ['engine.js','curriculum.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
+ for(const file of ['engine.js','curriculum.js','advanced.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
  await new Promise(r=>setTimeout(r,10));
  const click=sel=>{const el=w.document.querySelector(sel);assert.ok(el,`Missing ${sel}`);el.click();return el;};
  const finishTyping=()=>{
