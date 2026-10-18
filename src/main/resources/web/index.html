@@ -20,22 +20,29 @@
 <div class="app-shell">
   <aside class="sidebar" id="sidebar">
     <div class="brand"><div class="brand-mark">&gt;_</div><div><div class="brand-name">devflow<span class="brand-dot">.</span></div><div class="brand-sub">DEVELOPER ACADEMY</div></div></div>
-    <div class="sidebar-title">WORKSPACE</div>
+    <div class="sidebar-title">START HERE</div>
     <nav class="nav-list" aria-label="Main navigation">
-      <button class="nav-item" data-view="daily" title="Daily flow"><span class="nav-icon">◈</span> Daily flow <span class="nav-new">DAILY</span></button>
-      <button class="nav-item" data-view="java" title="Advanced Java"><span class="nav-icon">J</span> Advanced Java</button>
-      <button class="nav-item" data-view="wordtest" title="Typing test"><span class="nav-icon">⌨</span> Typing test</button>
       <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span> Overview</button>
-      <button class="nav-item" data-view="academy"><span class="nav-icon">▤</span> Typing academy</button>
-      <button class="nav-item" data-view="lab"><span class="nav-icon">⌘</span> Code lab</button>
-      <button class="nav-item" data-view="editor"><span class="nav-icon">{ }</span> Editor gym</button>
-      <button class="nav-item" data-view="handicap"><span class="nav-icon">◎</span> Typing handicap</button>
-      <button class="nav-item" data-view="insights"><span class="nav-icon">▥</span> Insights</button>
-      <button class="nav-item" data-view="intellij" title="IntelliJ IDEA"><span class="nav-icon">⌘</span> IntelliJ IDEA</button>
-      <button class="nav-item" data-view="projects"><span class="nav-icon">⌁</span> Repo sessions</button>
+      <button class="nav-item" data-view="daily"><span class="nav-icon">◈</span> Daily challenge <span class="nav-new">DAILY</span></button>
+      <button class="nav-item" data-view="wordtest"><span class="nav-icon">⌨</span> Typing test</button>
     </nav>
-    <div class="sidebar-title second-label">PREFERENCES</div>
-    <nav class="nav-list"><button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span> Settings</button></nav>
+    <div class="sidebar-title second-label">JAVA ENGINEERING</div>
+    <nav class="nav-list" aria-label="Java engineering">
+      <button class="nav-item" data-view="java"><span class="nav-icon">J</span> Advanced Java</button>
+      <button class="nav-item" data-view="performance"><span class="nav-icon">⚡</span> Performance lab</button>
+      <button class="nav-item" data-view="lab"><span class="nav-icon">⌘</span> Code practice</button>
+    </nav>
+    <details class="nav-more"><summary>More tools <span>⌄</span></summary>
+      <nav class="nav-list" aria-label="Additional tools">
+        <button class="nav-item" data-view="academy"><span class="nav-icon">▤</span> Typing academy</button>
+        <button class="nav-item" data-view="editor"><span class="nav-icon">{ }</span> Editor gym</button>
+        <button class="nav-item" data-view="handicap"><span class="nav-icon">◎</span> Typing handicap</button>
+        <button class="nav-item" data-view="insights"><span class="nav-icon">▥</span> Insights</button>
+        <button class="nav-item" data-view="intellij"><span class="nav-icon">⌘</span> IntelliJ IDEA</button>
+        <button class="nav-item" data-view="projects"><span class="nav-icon">⌁</span> Repo sessions</button>
+        <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span> Settings</button>
+      </nav>
+    </details>
     <div class="sidebar-spacer"></div>
     <div class="sidebar-coach">
       <div class="sidebar-coach-icon">✦</div>
@@ -109,7 +116,13 @@
         <div class="panel wordtest-panel"><div class="wordtest-controls"><label>Length <select id="wordtest-count"><option value="25">25 words</option><option value="50" selected>50 words</option><option value="100">100 words</option></select></label><label class="wordtest-check"><input type="checkbox" id="wordtest-punctuation"> Punctuation</label><label class="wordtest-check"><input type="checkbox" id="wordtest-numbers"> Numbers</label></div>
         <p class="eyebrow">RANDOM SAMPLE PREVIEW</p><p class="wordtest-preview" id="wordtest-preview"></p><div class="flow-actions"><button id="wordtest-start" class="primary-btn">Start typing test →</button><button id="wordtest-refresh" class="secondary-btn">New words ↻</button></div><p class="quiet-copy">New words are generated locally. No account or network access required. Results appear in Insights.</p></div>
       </section>
-      <section id="view-intellij" class="view">
+      <section id="view-performance" class="view">
+  <div class="page-heading"><div><p class="eyebrow">PERFORMANCE ENGINEERING · JAVA 8+</p><h1>Low-latency lab<span class="violet">.</span></h1><p class="page-description">Work through allocation profiles, JMH benchmarking, GC pauses and trading-system tail latency. Learn the methodology before tuning.</p></div></div>
+  <div class="panel performance-intro"><h2>Measure first. Optimise second.</h2><p>Zero-GC is a measured steady-state objective, not a JVM guarantee. Compare throughput, p99/p99.9 latency, allocations per operation and GC pauses under repeatable workloads.</p></div>
+  <div id="performance-grid" class="java-grid"></div>
+  <section class="panel performance-intro"><h2>Benchmark workflow</h2><p>1. Establish a baseline using JMH with warm-up, forks and realistic inputs. 2. Capture allocation hotspots with Java Flight Recorder. 3. Remove avoidable boxing and hot-path allocation. 4. Repeat under load and compare tail latency. 5. Inspect GC logs before changing collector flags.</p><p class="quiet-copy">JMH and JFR require a compatible local JDK and tooling; this module teaches the workflow without claiming to execute a profiler inside the browser.</p></section>
+</section>
+<section id="view-intellij" class="view">
         <div class="page-heading"><div><p class="eyebrow">STAY IN YOUR EDITOR</p><h1>Your IDE. Your training ground<span class="violet">.</span></h1><p class="page-description">The same DevFlow daily challenge and Java path, inside IntelliJ IDEA.</p></div><span class="tag">INTELLIJ PLUGIN</span></div>
         <div class="panel ide-hero"><div><div class="ide-badge">IJ</div><h2>A better break between builds.</h2><p>Open the DevFlow tool window, practise a Java pattern, and get back to your project. Your lessons, handicap, daily results and local progress are shared with the standalone app.</p><a class="primary-btn" href="https://github.com/ArvinUbhi/devflow-academy/actions" target="_blank" rel="noopener">Get the plugin from GitHub ↗</a></div><div class="ide-preview"><div class="ide-preview-head">IntelliJ IDEA <span>DevFlow</span></div><div class="ide-preview-body"><span class="eyebrow">DAILY FLOW</span><h3>A moment to find your rhythm.</h3><pre><code><span class="code-purple">int</span> score = 42;<br><span class="code-purple">boolean</span> ready = score &gt; 10;</code></pre><span class="tag violet-tag">JAVA · LEARN · TYPE · RECALL</span></div></div></div>
         <div class="content-two-col history-panel"><div class="panel"><span class="eyebrow">SET UP ONCE</span><h2>Install in three steps</h2><ol class="rules-list"><li>Download the <strong>devflow-intellij</strong> artifact from a successful GitHub Actions build. Unzip the artifact once to find the plugin ZIP.</li><li>In IntelliJ IDEA, open <strong>Settings → Plugins → ⚙ → Install Plugin from Disk</strong> and select that plugin ZIP.</li><li>Open <strong>View → Tool Windows → DevFlow</strong>. The bundled local app starts automatically.</li></ol><p class="quiet-copy">Targets IntelliJ IDEA 2025.3.1 and later. Uses the IDE's bundled Java runtime and embedded browser. See the repository for build and compatibility checks.</p></div><div class="panel"><span class="eyebrow">PURPOSEFUL PRACTICE</span><h2>Use shortcuts, build fluency</h2><p class="section-intro">Each Java lesson includes an IntelliJ shortcut for Windows/Linux and macOS, from Rename to Extract Method. Practise these in your editor alongside the typing exercises.</p><p class="section-intro">DevFlow measures typing inside its practice fields. Your source files and normal IDE keystrokes are never captured.</p><a class="text-link" href="https://github.com/ArvinUbhi/devflow-academy/tree/main/intellij-plugin" target="_blank" rel="noopener">Plugin source and setup ↗</a></div></div>
