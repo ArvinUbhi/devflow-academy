@@ -53,3 +53,39 @@ jobs:
         with:
           name: devflow-intellij
           path: intellij-plugin/build/distributions/*.zip
+
+  publish:
+    name: Publish tested local binaries
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build, intellij]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: devflow-jar
+          path: artifacts/standalone
+      - uses: actions/download-artifact@v4
+        with:
+          name: devflow-intellij
+          path: artifacts/plugin
+      - name: Publish verified JAR and installable IntelliJ ZIP to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s artifacts/standalone/devflow.jar
+          test -s artifacts/plugin/devflow-intellij-2.1.0.zip
+          cp artifacts/standalone/devflow.jar devflow.jar
+          mkdir -p downloads
+          cp artifacts/plugin/devflow-intellij-2.1.0.zip downloads/devflow-intellij-2.1.0.zip
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add devflow.jar downloads/devflow-intellij-2.1.0.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish verified DevFlow 2.1 binaries [skip ci]"
+            git push origin HEAD:main
+          fi
