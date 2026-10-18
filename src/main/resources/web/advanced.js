@@ -214,7 +214,7 @@
     'refactor regular release repeat reply result return review rhythm sample schema score search secure select server service '+
     'session share shift simple single smooth source space special speed stable stage start state static steady stream string '+
     'strong style system target teach template terminal test thread tick timing title today token touch track trade train '+
-    'typing unique update useful value variable version verify visual weekly welcome window wisdom worker workflow write yield').split(' ');
+    'typing unique update useful value variable version verify visual weekly welcome window wisdom worker workflow write yield').split(' ').concat(['zebra','zoom','puzzle','jazz','quiz','zero','zip','zinc','xyz','pixel','extra','syntax','jigsaw','judge','jump','queue','quality','quiet','verify','vivid','vector','brave','vortex','oxygen','xylophone','export','excellent']);
   function generateWords(count=50,settings={},seed){
     const size=Math.max(10,Math.min(200,Math.floor(Number(count)||50)));
     let state=(seed===undefined?Math.floor(Math.random()*0xffffffff):Number(seed))>>>0;
