@@ -14,3 +14,7 @@ body{background:#101219}button,a,input,textarea{ -webkit-tap-highlight-color:tra
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 /* Keep every training destination reachable in short IDE tool windows. */
 .sidebar{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#494259 transparent}
+
+/* Creator attribution stays readable without competing with the training UI. */
+.site-footer .footer-credit{color:var(--lav);font-weight:700;text-decoration:none}
+.site-footer .footer-credit:hover,.site-footer .footer-credit:focus-visible{text-decoration:underline;text-underline-offset:3px}
