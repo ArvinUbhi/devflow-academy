@@ -214,15 +214,18 @@
     'refactor regular release repeat reply result return review rhythm sample schema score search secure select server service '+
     'session share shift simple single smooth source space special speed stable stage start state static steady stream string '+
     'strong style system target teach template terminal test thread tick timing title today token touch track trade train '+
-    'typing unique update useful value variable version verify visual weekly welcome window wisdom worker workflow write yield').split(' ');
+    'typing unique update useful value variable version verify visual weekly welcome window wisdom worker workflow write yield').split(' ').concat(['zebra','zoom','puzzle','jazz','quiz','zero','zip','zinc','xyz','pixel','extra','syntax','jigsaw','judge','jump','queue','quality','quiet','verify','vivid','vector','brave','vortex','oxygen','xylophone','export','excellent']);
   function generateWords(count=50,settings={},seed){
     const size=Math.max(10,Math.min(200,Math.floor(Number(count)||50)));
     let state=(seed===undefined?Math.floor(Math.random()*0xffffffff):Number(seed))>>>0;
     if(!state)state=0x9e3779b9;
     const next=()=>{state^=state<<13;state^=state>>>17;state^=state<<5;return state>>>0;};
+    const focus=Array.isArray(settings.focusKeys)?settings.focusKeys.filter(k=>typeof k==='string'&&k.length===1&&/[a-z]/i.test(k)).map(k=>k.toLowerCase()):[];
+    const targeted=focus.length?words.filter(word=>focus.some(key=>word.includes(key))):[];
     const result=[];
     for(let i=0;i<size;i++){
-      let word=words[next()%words.length];
+      const bank=targeted.length&&i%4!==0?targeted:words;
+      let word=bank[next()%bank.length];
       if(settings.numbers&&i>0&&i%12===0)word=String(10+(next()%989));
       if(settings.punctuation&&i>0&&i%9===0)word+=i%18===0?'.':',';
       result.push(word);

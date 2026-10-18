@@ -44,3 +44,34 @@ body{background:#101219}button,a,input,textarea{ -webkit-tap-highlight-color:tra
 .performance-intro{padding:25px;margin-bottom:22px;line-height:1.7}
 .performance-intro h2{margin:0 0 10px}
 .performance-intro p{max-width:880px}
+
+/* Typing first: prominent entry point, evidence-led coaching, and readable teaching. */
+.typing-home-hero{display:grid;grid-template-columns:1.45fr 1fr;gap:24px;margin-bottom:18px;border-color:#504878;background:linear-gradient(110deg,#2b2642,#1b2334)}
+.typing-home-copy h2{font-size:clamp(26px,2.6vw,36px);letter-spacing:-1.1px;margin:9px 0}
+.typing-home-copy>p:not(.eyebrow){font-size:13px;line-height:1.8;color:#bcc4d5;max-width:640px}
+.typing-home-coach{border:1px solid #41445c;border-radius:12px;background:#171d2cca;padding:22px}
+.typing-home-coach h3{font-size:16px;margin:13px 0 9px}
+.typing-home-coach p{font-size:12px;color:#b5c0d1;line-height:1.7;margin:0 0 9px}
+.typing-coach-panel{margin-top:18px;max-width:1050px}
+.typing-coach-panel>p{max-width:820px;line-height:1.75;color:#b2bdcf}
+.typing-summary-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:21px 0}
+.typing-summary-metrics .insight-stat{padding:14px;min-width:0}
+.typing-summary-metrics .insight-stat strong{font-size:21px}
+.performance-study-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:28px 0 17px}
+.performance-study-heading h2{font-size:22px;margin:7px 0}
+.performance-lesson-detail{max-width:1060px;margin:23px 0 35px;scroll-margin-top:25px;padding:30px}
+.performance-lesson-detail>h2{font-size:30px;margin:20px 0}
+.performance-lesson-detail>h3,.performance-question h3{font-size:16px;margin:24px 0 8px}
+.performance-lesson-detail>p{font-size:13px;line-height:1.8;color:#bbc7d7}
+.performance-steps{padding-left:20px;color:#bec9dc;line-height:1.8;font-size:13px}
+.performance-steps li{margin-bottom:9px}
+.performance-caution{border-left:3px solid #dbb579;background:#312a28;padding:15px 18px;border-radius:5px;margin:22px 0}
+.performance-caution strong{color:#f3d9a4}
+.performance-caution p{margin:7px 0 0;font-size:12px;color:#e2d5c3;line-height:1.8}
+.performance-code{white-space:pre-wrap;overflow-wrap:anywhere;background:#101521;color:#d5dced;border:1px solid #343e53;padding:18px;border-radius:9px;font:12px/1.75 ui-monospace,Consolas,monospace}
+.performance-question{border-top:1px solid var(--line);margin-top:29px;padding-top:23px}
+.performance-answer-feedback{margin-top:17px;line-height:1.75;font-size:13px;color:#9ee5ca}
+.performance-lesson-detail .knowledge-options{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
+.performance-lesson-detail .knowledge-option{text-align:left}
+@media(max-width:850px){.typing-home-hero{grid-template-columns:1fr}.typing-summary-metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:610px){.typing-home-hero{padding:20px}.performance-lesson-detail{padding:20px}.typing-summary-metrics .insight-stat strong{font-size:19px}}

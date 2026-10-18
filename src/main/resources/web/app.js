@@ -2,6 +2,8 @@
 'use strict';
 const E = window.DevFlowEngine;
 const Advanced = window.DevFlowAdvanced;
+const Coach = window.DevFlowCoaching;
+const Performance = window.DevFlowPerformance;
 const $ = id => document.getElementById(id);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -79,7 +81,21 @@ let liveTicker = null;
 let dailyPlan = null;
 let projectInfo = {active:null,sessions:[]};
 let wordtestSample = '';
-function makeWordtest(){wordtestSample=Advanced.generateWords(Number($('wordtest-count').value),{numbers:$('wordtest-numbers').checked,punctuation:$('wordtest-punctuation').checked});$('wordtest-preview').textContent=wordtestSample;}
+let performanceCurrent = null,performanceAnswered = false;
+function typingCoach(){return Coach.analyzeTyping(state.history,state.weak,state.settings.goalWpm);}
+function makeWordtest(){
+ const focus=$('wordtest-mode').value==='focus'?typingCoach().focusKeys:[];
+ wordtestSample=Advanced.generateWords(Number($('wordtest-count').value),{numbers:$('wordtest-numbers').checked,punctuation:$('wordtest-punctuation').checked,focusKeys:focus});
+ $('wordtest-preview').textContent=wordtestSample;
+}
+function startWordtest(){
+ const useFocus=$('wordtest-mode').value==='focus'&&typingCoach().focusKeys.length>0;
+ if($('wordtest-mode').value==='focus'&&!useFocus)toast('No missed-key history yet; starting a normal random-word test.');
+ experience?.cancel();makeWordtest();
+ const count=Number($('wordtest-count').value);
+ runTyping({id:'wordtest-'+Date.now(),title:useFocus?'Weak-key word practice':'Random words',target:wordtestSample,wordCount:count,description:'Type with the correct fingers. Raw mistakes count even after correction.'},useFocus?'wordtest-focus':'wordtest');
+}
+function startFocusedWordtest(){$('wordtest-mode').value='focus';makeWordtest();startWordtest();}
 function projectTags() { const a=projectInfo.active;return a && a.repo ? {sessionId:a.id,projectId:a.repo.id,project:a.repo.name} : {}; }
 async function refreshProject(){try{const res=await fetch('/api/project');if(res.ok)projectInfo=await res.json();}catch{}renderProjects();}
 
@@ -123,10 +139,13 @@ function go(view) {
   experience?.cancel();
   currentView=view;
   $$('.view').forEach(node=>node.classList.toggle('active-view',node.id==='view-'+view));
-  $$('.nav-item').forEach(node=>node.classList.toggle('active',node.dataset.view===view));
+  document.querySelectorAll('.nav-item').forEach(node=>node.classList.toggle('active',node.dataset.view===view));
+  const activeNav=Array.from(document.querySelectorAll('.nav-item')).find(node=>node.dataset.view===view);
+  const parentDetails=activeNav?.closest?.('details');if(parentDetails)parentDetails.open=true;
   $('page-crumb').textContent=titleFor(view);
   $('sidebar').classList.remove('open');
   if (view==='insights') renderInsights();
+  if (view==='performance') renderPerformance();
   if (view==='handicap') renderHandicap();
   if (view==='projects') refreshProject();
   window.scrollTo({top:0,behavior:'instant'});
@@ -167,6 +186,12 @@ function renderDashboard(){
  $('lesson-progress-bar').style.width=100*mastered/LESSONS.length+'%';
  barChart($('mini-chart'),state.history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-7));
  $('progress-headline').textContent=ds.count?`${ds.count} completed session${ds.count!==1?'s':''}`:'Your journey starts here';
+ const coaching=typingCoach();
+ $('home-coach-title').textContent=coaching.title;
+ $('home-coach-advice').textContent=coaching.advice;
+ $('home-typing-summary').textContent=coaching.count?
+   coaching.count+' word tests · '+coaching.avgWpm+' average WPM · '+coaching.avgAccuracy+'% raw accuracy':
+   'Your first random-word test will establish your baseline.';
  $('progress-description').textContent=ds.count?`${ds.minutes} minutes of focused training so far.`:'Complete a practice session to establish your baseline.';
 }
 function renderAcademy(){
@@ -235,7 +260,16 @@ function renderSettings(){
  $('setting-keyboard').checked=state.settings.showKeyboard;
  $('setting-blur').checked=!!state.settings.blurCompleted;
 }
-function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();experience?.render();}
+function renderWordtestCoach(){
+ const data=typingCoach();
+ $('wordtest-coach-title').textContent=data.title;
+ $('wordtest-coach-advice').textContent=data.advice;
+ $('wordtest-coach-evidence').textContent=data.evidence+(data.missed.length?' Most missed keys by raw count: '+data.missed.map(k=>k.label+' ('+k.count+')').join(', ')+'. Counts are not error rates.':'');
+ const metrics=[['RECENT AVERAGE WPM',data.avgWpm??'—'],['RAW ACCURACY',data.avgAccuracy===null?'—':data.avgAccuracy+'%'],['BEST NORMAL TEST',data.bestWpm??'—'],['COMPLETED TESTS',data.count]];
+ $('wordtest-metrics').innerHTML=metrics.map(([label,value])=>'<div class="insight-stat"><span>'+label+'</span><strong>'+value+'</strong></div>').join('');
+ $('wordtest-coach-action').textContent=data.next+' →';
+}
+function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();renderWordtestCoach();renderPerformance();experience?.render();}
 
 function weakTarget() {
  const focus = topWeak(3).map(([k])=>k.toLowerCase());
@@ -263,7 +297,7 @@ function playDaily(index){
 function runTyping(item, kind, assessmentIndex=null, fromDaily=false) {
  if(!fromDaily) dailyPlan=null;
  leaveTraining(fromDaily);
- training={item,kind,assessmentIndex,dailyIndex:fromDaily&&dailyPlan?dailyPlan.index:null,text:'',errors:0,attempts:0,start:null,intervals:[],lastKeyTime:null,intervalTimer:null};
+ training={item,kind,assessmentIndex,dailyIndex:fromDaily&&dailyPlan?dailyPlan.index:null,text:'',errors:0,errorsByKey:{},attempts:0,start:null,intervals:[],lastKeyTime:null,intervalTimer:null};
  $('trainer-learning').classList.add('hidden');
  $('finish-share').classList.add('hidden');
  $('training-overlay').classList.remove('hidden');
@@ -372,7 +406,7 @@ function captureInput(value){
    const instant=performance.now();
    for(const change of changes){
      t.attempts++;
-     if(change.error){t.errors++;if(change.expected)state.weak[change.expected]=(state.weak[change.expected]||0)+1;}
+     if(change.error){t.errors++;if(change.expected){state.weak[change.expected]=(state.weak[change.expected]||0)+1;t.errorsByKey[change.expected]=(t.errorsByKey[change.expected]||0)+1;}}
      if(t.lastKeyTime!==null)t.intervals.push(instant-t.lastKeyTime);
      t.lastKeyTime=instant;
    }
@@ -385,7 +419,7 @@ function finishTyping(){
  const t=training;if(!t)return;
  const stats=computeLive();
  if(liveTicker){clearInterval(liveTicker);liveTicker=null;}
- const result={date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,wpm:stats.wpm,accuracy:stats.accuracy,rhythm:stats.rhythm,errors:stats.errors,seconds:round(stats.seconds),...projectTags()};
+ const result={date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,wpm:stats.wpm,accuracy:stats.accuracy,rhythm:stats.rhythm,errors:stats.errors,seconds:round(stats.seconds),wordCount:t.item.wordCount,keyMistakes:t.errorsByKey,...projectTags()};
  if(experience?.complete(t,result)){renderAll();return;}
  if(t.kind==='lesson'){
    if(stats.accuracy>=94)state.mastered[t.item.id]=true;
@@ -393,9 +427,14 @@ function finishTyping(){
    saveState();
    const nextIdx=LESSONS.findIndex(l=>l.id===t.item.id)+1;
    showFinish({eyebrow:stats.accuracy>=94?'LESSON MASTERED':'LESSON COMPLETED',title:stats.accuracy>=94?'Another skill unlocked.':'Good work — sharpen your accuracy.',description:stats.accuracy>=94?'Your technique is getting more reliable.':'Reach 94% accuracy or better to mark this lesson mastered.',stats:result,coaching:coachFeedback(result),next:nextIdx<LESSONS.length?()=>runTyping(LESSONS[nextIdx],'lesson'):()=>go('lab'),nextLabel:nextIdx<LESSONS.length?'Next lesson →':'Explore code lab →'});
- } else if(t.kind==='wordtest'){
+ } else if(t.kind==='wordtest'||t.kind==='wordtest-focus'){
   state.history.push(result);saveState();
-  showFinish({eyebrow:'RANDOM WORD TEST COMPLETE',title:stats.wpm+' WPM · '+stats.accuracy+'% accuracy',description:'A fresh word test is ready when you are.',stats:result,coaching:coachFeedback(result),next:()=>{makeWordtest();runTyping({id:'wordtest-'+Date.now(),title:'Random words',target:wordtestSample,description:'Type each word precisely. Corrections affect accuracy.'},'wordtest');},nextLabel:'New random test →'});
+  showFinish({eyebrow:t.kind==='wordtest-focus'?'FOCUSED KEY PRACTICE COMPLETE':'RANDOM WORD TEST COMPLETE',title:stats.wpm+' WPM · '+stats.accuracy+'% accuracy',description:'Raw errors include mistakes that you corrected. A fresh test is ready whenever you are.',stats:result,coaching:Coach.completedFeedback(result,typingCoach()),next:()=>startWordtest(),nextLabel:'New random test →'});
+  $('finish-focused').classList.remove('hidden');
+ } else if(t.kind==='perf-type'){
+  state.history.push(result);saveState();
+  const lesson=Performance.byId(t.item.lessonId);
+  showFinish({eyebrow:'PERFORMANCE TYPING PRACTICE',title:'You typed a Java engineering pattern.',description:'Typing fluency and technical comprehension are different skills. Test the decision with a question.',stats:result,coaching:lesson?lesson.tip+' '+lesson.trap:coachFeedback(result),next:()=>{go('performance');if(lesson)openPerformanceLesson(lesson.id);},nextLabel:'Review the engineering question →'});
  } else if(t.kind==='drill'){
    state.history.push(result);saveState();
    showFinish({eyebrow:'FOCUSED WORKOUT COMPLETE',title:'Accuracy takes repetition.',description:'You worked on the keys your training history identifies as difficult.',stats:result,coaching:coachFeedback(result),next:()=>go('dashboard'),nextLabel:'Back to dashboard →'});
@@ -436,6 +475,7 @@ function coachFeedback(s){
 function showFinish({eyebrow,title,description,stats,coaching,next,nextLabel}){
  if(!training)return;
  $('trainer-learning').classList.add('hidden');$('finish-share').classList.add('hidden');
+ $('finish-focused').classList.add('hidden');
  training.finishNext=next;
  $('trainer-typing').classList.add('hidden');$('trainer-editor').classList.add('hidden');$('trainer-finish').classList.remove('hidden');
  $('finish-eyebrow').textContent=eyebrow;$('finish-title').textContent=title;$('finish-description').textContent=description;
@@ -467,11 +507,69 @@ function checkEditor(){
 function renderPerformance(){
  const lessons=Advanced.lessons.filter(x=>x.chapter==='Low latency / GC'||x.chapter==='Concurrency');
  const grid=$('performance-grid');if(!grid)return;
- grid.innerHTML=lessons.map(l=>'<button class="java-card" data-flow="java-open" data-id="'+l.id+'"><div class="java-card-top"><span class="micro-label">'+esc(l.chapter)+'</span><span class="java-check">↗</span></div><h3>'+esc(l.title)+'</h3><p>'+esc(l.why)+'</p><div class="java-card-footer"><span>LEARN · TYPE · RECALL</span><span>~5 MIN</span></div></button>').join('');
+ grid.innerHTML=lessons.map(l=>'<button class="java-card" data-flow="java-open" data-id="'+l.id+'"><div class="java-card-top"><span class="micro-label">'+esc(l.chapter)+'</span><span class="java-check">↗</span></div><h3>'+esc(l.title)+'</h3><p>'+esc(l.why)+'</p><div class="java-card-footer"><span>TYPE · RECALL · EXPLAIN</span><span>~5 MIN</span></div></button>').join('');
+ const cases=$('performance-study-cards');if(!cases)return;
+ cases.innerHTML=Performance.cases.map(l=>{
+   const progress=state.performance?.[l.id];
+   return '<button class="java-card perf-study-card" data-performance-open="'+l.id+'"><div class="java-card-top"><span class="micro-label">'+esc(l.track)+'</span><span class="java-check">'+(progress?.correct?'✓':'↗')+'</span></div><h3>'+esc(l.title)+'</h3><p>'+esc(l.situation)+'</p><div class="java-card-footer"><span>'+esc(progress?.correct?'UNDERSTANDING VERIFIED':'READ · TYPE · DECIDE')+'</span><span>~'+l.minutes+' MIN</span></div></button>';
+ }).join('');
+ if(performanceCurrent)renderPerformanceDetail();
+}
+function openPerformanceLesson(id){
+ const lesson=Performance.byId(id);if(!lesson)return;
+ performanceCurrent=id;performanceAnswered=false;
+ renderPerformanceDetail();
+ $('performance-lesson-detail').scrollIntoView?.({behavior:'smooth',block:'start'});
+}
+function renderPerformanceDetail(){
+ const lesson=Performance.byId(performanceCurrent),node=$('performance-lesson-detail');if(!node)return;
+ if(!lesson){node.classList.add('hidden');return;}
+ node.classList.remove('hidden');
+ const progress=state.performance?.[lesson.id];
+ const completed=progress?.attempts?'<p class="quiet-copy">Prior attempts: '+progress.attempts+' · '+(progress.correct?'Understood ✓':'Keep learning')+'. You can repeat the quiz to improve your understanding.</p>':'';
+ const options=lesson.options.map((option,i)=>'<button class="knowledge-option" data-performance-answer="'+i+'"><span>'+(i+1)+'</span>'+esc(option)+'</button>').join('');
+ node.innerHTML='<div class="card-heading"><span class="eyebrow">'+esc(lesson.track)+' · '+lesson.minutes+' MIN</span><button class="text-link" data-performance-close="1" aria-label="Close investigation">Close ✕</button></div>'+
+ '<h2>'+esc(lesson.title)+'</h2><h3>Situation</h3><p>'+esc(lesson.situation)+'</p>'+
+ '<h3>What you need to understand</h3><p>'+esc(lesson.learn)+'</p>'+
+ '<h3>How to investigate this for real</h3><ol class="performance-steps">'+lesson.steps.map(step=>'<li>'+esc(step)+'</li>').join('')+'</ol>'+
+ '<div class="performance-caution"><strong>A common mistake</strong><p>'+esc(lesson.trap)+'</p></div>'+
+ '<h3>Type the relevant Java pattern</h3><pre class="performance-code"><code>'+esc(lesson.code)+'</code></pre><p class="quiet-copy">'+esc(lesson.tip)+'</p>'+
+ '<button class="primary-btn" data-performance-type="'+lesson.id+'">Type this Java snippet →</button>'+
+ '<h3>Try the real tooling</h3><p>'+esc(lesson.setup)+'</p><pre class="performance-code"><code>'+esc(lesson.command)+'</code></pre>'+
+ '<p class="quiet-copy">Reference: <a target="_blank" rel="noopener noreferrer" href="'+esc(lesson.source)+'">Official documentation ↗</a></p>'+
+ '<div class="performance-question"><span class="eyebrow">ENGINEERING DECISION · FIRST ANSWER PER ATTEMPT</span><h3>'+esc(lesson.question)+'</h3><div class="knowledge-options" id="performance-answers">'+options+'</div><div class="performance-answer-feedback" id="performance-answer-feedback" role="status"></div>'+completed+'</div>';
+}
+function answerPerformance(index){
+ const lesson=Performance.byId(performanceCurrent);
+ if(!lesson||performanceAnswered||!Number.isInteger(index)||index<0||index>=lesson.options.length)return;
+ performanceAnswered=true;
+ const correct=index===lesson.answer,previous=state.performance?.[lesson.id]||{attempts:0,correct:false};
+ state.performance[lesson.id]={attempts:previous.attempts+1,correct:previous.correct||correct,last:nowISO()};
+ saveState();
+ const choices=$('performance-answers');
+ for(const button of choices.querySelectorAll('button'))button.disabled=true;
+ $('performance-answer-feedback').textContent=(correct?'Correct. ':'Not quite. Correct answer: '+lesson.options[lesson.answer]+'. ')+lesson.explanation;
+ renderPerformanceCardsOnly();
+}
+function renderPerformanceCardsOnly(){
+ const node=$('performance-study-cards');if(!node)return;
+ for(const button of node.querySelectorAll('[data-performance-open]')){
+   const progress=state.performance?.[button.dataset.performanceOpen];
+   const check=button.querySelector('.java-check');
+   if(check&&progress?.correct)check.textContent='✓';
+ }
 }
 function setupActions(){
  document.addEventListener('click',ev=>{
   const flow=ev.target.closest('[data-flow]');if(flow)return;
+  const perfOpen=ev.target.closest('[data-performance-open]');if(perfOpen){openPerformanceLesson(perfOpen.dataset.performanceOpen);return;}
+  const perfAnswer=ev.target.closest('[data-performance-answer]');if(perfAnswer){answerPerformance(Number(perfAnswer.dataset.performanceAnswer));return;}
+  const perfType=ev.target.closest('[data-performance-type]');if(perfType){
+    const lesson=Performance.byId(perfType.dataset.performanceType);
+    if(lesson){experience?.cancel();runTyping({id:'perf-'+lesson.id,lessonId:lesson.id,title:'Type: '+lesson.title,target:lesson.code,description:lesson.tip},'perf-type');}
+    return;
+  }
+  const perfClose=ev.target.closest('[data-performance-close]');if(perfClose){performanceCurrent=null;$('performance-lesson-detail').classList.add('hidden');return;}
   const nav=ev.target.closest('[data-view]');if(nav){go(nav.dataset.view);return;}
   const goto=ev.target.closest('[data-go]');if(goto){go(goto.dataset.go);return;}
   const action=ev.target.closest('[data-action]');if(action&&action.dataset.action==='assessment'){startAssessment();return;}
@@ -489,11 +587,16 @@ function setupActions(){
  $('restart-training').addEventListener('click',()=>{if(training&&training.item){const t=training;runTyping(t.item,t.kind,t.assessmentIndex,t.dailyIndex!==null);training.assessmentResults=t.assessmentResults;}});
  $('typing-card').addEventListener('click',()=>$('typing-capture').focus());
  $('typing-card').addEventListener('keydown',e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();$('typing-capture').focus();}});
+ $('home-typing-start').addEventListener('click',()=>{$('wordtest-mode').value='standard';startWordtest();});
+ $('home-focus-start').addEventListener('click',startFocusedWordtest);
+ $('wordtest-coach-action').addEventListener('click',()=>{$('wordtest-mode').value=typingCoach().action;startWordtest();});
+ $('finish-focused').addEventListener('click',startFocusedWordtest);
  $('wordtest-refresh').addEventListener('click',makeWordtest);
  $('wordtest-count').addEventListener('change',makeWordtest);
+ $('wordtest-mode').addEventListener('change',makeWordtest);
  $('wordtest-punctuation').addEventListener('change',makeWordtest);
  $('wordtest-numbers').addEventListener('change',makeWordtest);
- $('wordtest-start').addEventListener('click',()=>{experience?.cancel();if(!wordtestSample)makeWordtest();runTyping({id:'wordtest-'+Date.now(),title:'Random words',target:wordtestSample,description:'Type each word precisely. Corrections affect accuracy.'},'wordtest');});
+ $('wordtest-start').addEventListener('click',startWordtest);
  $('blur-toggle').addEventListener('click',()=>{state.settings.blurCompleted=!state.settings.blurCompleted;$('typing-prompt').classList.toggle('blur-completed',state.settings.blurCompleted);$('blur-toggle').setAttribute('aria-pressed',String(state.settings.blurCompleted));$('blur-toggle').textContent='◐ Blur typed text: '+(state.settings.blurCompleted?'On':'Off');updateTypingDisplay();saveState();});
  const updateCaps=e=>{if(!e.getModifierState)return;const caps=e.getModifierState('CapsLock');$('caps-lock-warning').classList.toggle('hidden',!caps||$('training-overlay').classList.contains('hidden'));};
  $('typing-capture').addEventListener('keydown',updateCaps);

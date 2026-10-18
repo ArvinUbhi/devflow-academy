@@ -46,7 +46,7 @@ public final class DevFlowRuntime implements Disposable {
                 if (disposed) throw new IllegalStateException("DevFlow was closed");
                 if (ownedProcess != null) ownedProcess.destroy();
                 if (extractedJar != null) Files.deleteIfExists(extractedJar);
-                extractedJar = Files.createTempFile("devflow-2-1-", ".jar");
+                extractedJar = Files.createTempFile("devflow-2-2-", ".jar");
                 try (InputStream input = getClass().getResourceAsStream("/app/devflow.jar")) {
                     if (input == null) throw new IllegalStateException("Bundled app is missing; reinstall the plugin");
                     Files.copy(input, extractedJar, StandardCopyOption.REPLACE_EXISTING);
@@ -83,7 +83,7 @@ public final class DevFlowRuntime implements Disposable {
             HttpRequest request = HttpRequest.newBuilder(URI.create(URL + "/api/health")).timeout(Duration.ofSeconds(1)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return response.statusCode() == 200 && response.body().contains("\"app\":\"DevFlow\"")
-                    && response.body().contains("\"version\":\"2.1.0\"");
+                    && response.body().contains("\"version\":\"2.2.0\"");
         } catch (Exception ignored) { return false; }
     }
 

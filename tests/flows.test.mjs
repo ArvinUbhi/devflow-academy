@@ -15,7 +15,7 @@ async function app(initial=null,clipboard=true){
   return{ok:true,json:async()=>saved};
  };
  if(clipboard)Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async x=>{copied=x;}}});
- for(const file of ['engine.js','curriculum.js','advanced.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
+ for(const file of ['engine.js','curriculum.js','advanced.js','coaching.js','performance-coach.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
  await new Promise(r=>setTimeout(r,10));
  const click=sel=>{const el=w.document.querySelector(sel);assert.ok(el,`Missing ${sel}`);el.click();return el;};
  const finishTyping=()=>{
@@ -127,5 +127,63 @@ test('advanced Java lessons appear before foundation refreshers and support fres
  const snippet=a.w.document.getElementById('trainer-learning').textContent;
  assert.match(snippet,/ring buffer/i);
  assert.match(snippet,/prealloc|memory ordering|backpressure/i);
+ assert.deepEqual(a.errors,[]);
+});
+
+test('typing is the primary dashboard action and saved word-test results drive coaching',async t=>{
+ const a=await app();t.after(()=>a.dom.window.close());
+ const d=a.w.document;
+ assert.match(d.querySelector('.typing-home-hero').textContent,/Build speed that lasts/);
+ assert.match(d.getElementById('home-coach-advice').textContent,/first|baseline|50-word/i);
+ d.getElementById('wordtest-count').value='25';
+ a.click('#home-typing-start');
+ assert.equal(d.getElementById('training-title').textContent,'Random words');
+ a.finishTyping();await a.tick();
+ assert.equal(a.saved.history.at(-1).kind,'wordtest');
+ assert.equal(a.saved.history.at(-1).wordCount,25);
+ assert.match(d.getElementById('finish-coaching').textContent,/this 25-word test/i);
+ a.click('#finish-exit');
+ assert.match(d.getElementById('home-typing-summary').textContent,/1 word tests/);
+ assert.deepEqual(a.errors,[]);
+});
+test('missed-key focused practice is separated from normal personal-best tracking',async t=>{
+ const initial={version:2,weak:{z:9,x:2},history:[{date:'2026-10-17',kind:'wordtest',title:'Random words',wpm:53,accuracy:90,rhythm:80,seconds:45}]};
+ const a=await app(initial);t.after(()=>a.dom.window.close());
+ const d=a.w.document;
+ a.click('[data-view="wordtest"]');
+ assert.match(d.getElementById('wordtest-coach-evidence').textContent,/z.*9/);
+ d.getElementById('wordtest-count').value='25';
+ a.click('#wordtest-coach-action');
+ assert.equal(d.getElementById('training-title').textContent,'Weak-key word practice');
+ assert.ok(d.getElementById('typing-prompt').textContent.split(' ').filter(word=>/[zx]/.test(word)).length>=12);
+ a.finishTyping();await a.tick();
+ assert.equal(a.saved.history.at(-1).kind,'wordtest-focus');
+ a.click('#finish-exit');a.click('[data-view="wordtest"]');
+ assert.match(d.getElementById('wordtest-metrics').textContent,/53/);
+ assert.deepEqual(a.errors,[]);
+});
+test('performance investigations teach evidence, allow typing practice and save quiz progress',async t=>{
+ const a=await app();t.after(()=>a.dom.window.close());
+ const d=a.w.document;
+ a.click('[data-view="performance"]');
+ assert.match(d.getElementById('performance-study-cards').textContent,/Measure the hot path/);
+ a.click('[data-performance-open="allocations"]');
+ assert.match(d.getElementById('performance-lesson-detail').textContent,/bytes|B\/op|JMH/i);
+ a.click('[data-performance-answer="0"]');
+ await a.tick();
+ assert.equal(a.saved.performance.allocations.attempts,1);
+ assert.equal(a.saved.performance.allocations.correct,false);
+ assert.match(d.getElementById('performance-answer-feedback').textContent,/Correct answer/);
+ a.click('[data-performance-open="allocations"]');
+ a.click('[data-performance-answer="1"]');
+ await a.tick();
+ assert.equal(a.saved.performance.allocations.attempts,2);
+ assert.equal(a.saved.performance.allocations.correct,true);
+ a.click('[data-performance-type="allocations"]');
+ assert.match(d.getElementById('training-title').textContent,/Type: Reduce avoidable/);
+ a.finishTyping();await a.tick();
+ assert.equal(a.saved.history.at(-1).kind,'perf-type');
+ a.click('#finish-next');
+ assert.equal(d.getElementById('performance-lesson-detail').classList.contains('hidden'),false);
  assert.deepEqual(a.errors,[]);
 });
