@@ -139,8 +139,8 @@ function go(view) {
   experience?.cancel();
   currentView=view;
   $$('.view').forEach(node=>node.classList.toggle('active-view',node.id==='view-'+view));
-  $('.nav-item').forEach(node=>node.classList.toggle('active',node.dataset.view===view));
-  const activeNav=$('.nav-item').find(node=>node.dataset.view===view);
+  document.querySelectorAll('.nav-item').forEach(node=>node.classList.toggle('active',node.dataset.view===view));
+  const activeNav=Array.from(document.querySelectorAll('.nav-item')).find(node=>node.dataset.view===view);
   const parentDetails=activeNav?.closest?.('details');if(parentDetails)parentDetails.open=true;
   $('page-crumb').textContent=titleFor(view);
   $('sidebar').classList.remove('open');
