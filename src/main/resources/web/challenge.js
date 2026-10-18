@@ -1,18 +1,20 @@
 /* Daily prompts and scoring are versioned and identical across timezones and machines. */
 (function(root, factory) {
-  const api = typeof module === 'object' && module.exports ? factory(require('./curriculum.js')) : factory(root.DevFlowJava);
+  const api = typeof module === 'object' && module.exports ? factory(require('./curriculum.js'),require('./advanced.js')) : factory(root.DevFlowJava,root.DevFlowAdvanced);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.DevFlowChallenge = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function(J) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function(J,A) {
   'use strict';
   const DAY=86400000, EPOCH=Date.UTC(2026,9,1);
   const dayKey = (date=new Date()) => new Date(date).toISOString().slice(0,10);
   const ordinal = date => Math.floor((Date.parse(dayKey(date)+'T00:00:00Z')-EPOCH)/DAY);
   function daily(date=new Date()) {
     const n=ordinal(date), index=((n%J.lessons.length)+J.lessons.length)%J.lessons.length;
-    const lesson=J.lessons[index], value=10+(((n%90)+90)%90);
-    return {version:1, key:dayKey(date), number:n+1, lesson, stages:[
-      {id:'syntax', title:'Find your rhythm', target:`int score = ${value};\nboolean ready = score >= 10;`, description:'A short warm-up. Exact case, symbols and spacing count.'},
+    const isAdvanced=dayKey(date)>='2026-10-19'&&A&&A.lessons&&A.lessons.length>0;
+    const lesson=isAdvanced?A.variant(A.lessons[((n%A.lessons.length)+A.lessons.length)%A.lessons.length],(Math.imul(n,2654435761)>>>0)):J.lessons[index];
+    const value=10+(((n%90)+90)%90);
+    return {version:isAdvanced?2:1, key:dayKey(date), number:n+1, lesson, stages:[
+      {id:'syntax', title:'Find your rhythm', target:isAdvanced?`int sequence = ${value};\nboolean ready = sequence >= 10;`:`int score = ${value};\nboolean ready = score >= 10;`, description:'A short warm-up. Exact case, symbols and spacing count.'},
       {id:'code', title:lesson.title, target:lesson.code, description:lesson.concept},
       {id:'pattern', title:'Seal the pattern', target:lesson.recall.code, description:lesson.recall.prompt}
     ]};
