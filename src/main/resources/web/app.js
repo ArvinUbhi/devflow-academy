@@ -297,7 +297,7 @@ function playDaily(index){
 function runTyping(item, kind, assessmentIndex=null, fromDaily=false) {
  if(!fromDaily) dailyPlan=null;
  leaveTraining(fromDaily);
- training={item,kind,assessmentIndex,dailyIndex:fromDaily&&dailyPlan?dailyPlan.index:null,text:'',errors:0,attempts:0,start:null,intervals:[],lastKeyTime:null,intervalTimer:null};
+ training={item,kind,assessmentIndex,dailyIndex:fromDaily&&dailyPlan?dailyPlan.index:null,text:'',errors:0,errorsByKey:{},attempts:0,start:null,intervals:[],lastKeyTime:null,intervalTimer:null};
  $('trainer-learning').classList.add('hidden');
  $('finish-share').classList.add('hidden');
  $('training-overlay').classList.remove('hidden');
@@ -406,7 +406,7 @@ function captureInput(value){
    const instant=performance.now();
    for(const change of changes){
      t.attempts++;
-     if(change.error){t.errors++;if(change.expected)state.weak[change.expected]=(state.weak[change.expected]||0)+1;}
+     if(change.error){t.errors++;if(change.expected){state.weak[change.expected]=(state.weak[change.expected]||0)+1;t.errorsByKey[change.expected]=(t.errorsByKey[change.expected]||0)+1;}}
      if(t.lastKeyTime!==null)t.intervals.push(instant-t.lastKeyTime);
      t.lastKeyTime=instant;
    }
@@ -419,7 +419,7 @@ function finishTyping(){
  const t=training;if(!t)return;
  const stats=computeLive();
  if(liveTicker){clearInterval(liveTicker);liveTicker=null;}
- const result={date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,wpm:stats.wpm,accuracy:stats.accuracy,rhythm:stats.rhythm,errors:stats.errors,seconds:round(stats.seconds),...projectTags()};
+ const result={date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,wpm:stats.wpm,accuracy:stats.accuracy,rhythm:stats.rhythm,errors:stats.errors,seconds:round(stats.seconds),wordCount:t.item.wordCount,keyMistakes:t.errorsByKey,...projectTags()};
  if(experience?.complete(t,result)){renderAll();return;}
  if(t.kind==='lesson'){
    if(stats.accuracy>=94)state.mastered[t.item.id]=true;
@@ -427,9 +427,14 @@ function finishTyping(){
    saveState();
    const nextIdx=LESSONS.findIndex(l=>l.id===t.item.id)+1;
    showFinish({eyebrow:stats.accuracy>=94?'LESSON MASTERED':'LESSON COMPLETED',title:stats.accuracy>=94?'Another skill unlocked.':'Good work — sharpen your accuracy.',description:stats.accuracy>=94?'Your technique is getting more reliable.':'Reach 94% accuracy or better to mark this lesson mastered.',stats:result,coaching:coachFeedback(result),next:nextIdx<LESSONS.length?()=>runTyping(LESSONS[nextIdx],'lesson'):()=>go('lab'),nextLabel:nextIdx<LESSONS.length?'Next lesson →':'Explore code lab →'});
- } else if(t.kind==='wordtest'){
+ } else if(t.kind==='wordtest'||t.kind==='wordtest-focus'){
   state.history.push(result);saveState();
-  showFinish({eyebrow:'RANDOM WORD TEST COMPLETE',title:stats.wpm+' WPM · '+stats.accuracy+'% accuracy',description:'A fresh word test is ready when you are.',stats:result,coaching:coachFeedback(result),next:()=>{makeWordtest();runTyping({id:'wordtest-'+Date.now(),title:'Random words',target:wordtestSample,description:'Type each word precisely. Corrections affect accuracy.'},'wordtest');},nextLabel:'New random test →'});
+  showFinish({eyebrow:t.kind==='wordtest-focus'?'FOCUSED KEY PRACTICE COMPLETE':'RANDOM WORD TEST COMPLETE',title:stats.wpm+' WPM · '+stats.accuracy+'% accuracy',description:'Raw errors include mistakes that you corrected. A fresh test is ready whenever you are.',stats:result,coaching:Coach.completedFeedback(result,typingCoach()),next:()=>startWordtest(),nextLabel:'New random test →'});
+  $('finish-focused').classList.remove('hidden');
+ } else if(t.kind==='perf-type'){
+  state.history.push(result);saveState();
+  const lesson=Performance.byId(t.item.lessonId);
+  showFinish({eyebrow:'PERFORMANCE TYPING PRACTICE',title:'You typed a Java engineering pattern.',description:'Typing fluency and technical comprehension are different skills. Test the decision with a question.',stats:result,coaching:lesson?lesson.tip+' '+lesson.trap:coachFeedback(result),next:()=>{go('performance');if(lesson)openPerformanceLesson(lesson.id);},nextLabel:'Review the engineering question →'});
  } else if(t.kind==='drill'){
    state.history.push(result);saveState();
    showFinish({eyebrow:'FOCUSED WORKOUT COMPLETE',title:'Accuracy takes repetition.',description:'You worked on the keys your training history identifies as difficult.',stats:result,coaching:coachFeedback(result),next:()=>go('dashboard'),nextLabel:'Back to dashboard →'});
@@ -470,6 +475,7 @@ function coachFeedback(s){
 function showFinish({eyebrow,title,description,stats,coaching,next,nextLabel}){
  if(!training)return;
  $('trainer-learning').classList.add('hidden');$('finish-share').classList.add('hidden');
+ $('finish-focused').classList.add('hidden');
  training.finishNext=next;
  $('trainer-typing').classList.add('hidden');$('trainer-editor').classList.add('hidden');$('trainer-finish').classList.remove('hidden');
  $('finish-eyebrow').textContent=eyebrow;$('finish-title').textContent=title;$('finish-description').textContent=description;
@@ -523,11 +529,16 @@ function setupActions(){
  $('restart-training').addEventListener('click',()=>{if(training&&training.item){const t=training;runTyping(t.item,t.kind,t.assessmentIndex,t.dailyIndex!==null);training.assessmentResults=t.assessmentResults;}});
  $('typing-card').addEventListener('click',()=>$('typing-capture').focus());
  $('typing-card').addEventListener('keydown',e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();$('typing-capture').focus();}});
+ $('home-typing-start').addEventListener('click',()=>{$('wordtest-mode').value='standard';startWordtest();});
+ $('home-focus-start').addEventListener('click',startFocusedWordtest);
+ $('wordtest-coach-action').addEventListener('click',()=>{$('wordtest-mode').value=typingCoach().action;startWordtest();});
+ $('finish-focused').addEventListener('click',startFocusedWordtest);
  $('wordtest-refresh').addEventListener('click',makeWordtest);
  $('wordtest-count').addEventListener('change',makeWordtest);
+ $('wordtest-mode').addEventListener('change',makeWordtest);
  $('wordtest-punctuation').addEventListener('change',makeWordtest);
  $('wordtest-numbers').addEventListener('change',makeWordtest);
- $('wordtest-start').addEventListener('click',()=>{experience?.cancel();if(!wordtestSample)makeWordtest();runTyping({id:'wordtest-'+Date.now(),title:'Random words',target:wordtestSample,description:'Type each word precisely. Corrections affect accuracy.'},'wordtest');});
+ $('wordtest-start').addEventListener('click',startWordtest);
  $('blur-toggle').addEventListener('click',()=>{state.settings.blurCompleted=!state.settings.blurCompleted;$('typing-prompt').classList.toggle('blur-completed',state.settings.blurCompleted);$('blur-toggle').setAttribute('aria-pressed',String(state.settings.blurCompleted));$('blur-toggle').textContent='◐ Blur typed text: '+(state.settings.blurCompleted?'On':'Off');updateTypingDisplay();saveState();});
  const updateCaps=e=>{if(!e.getModifierState)return;const caps=e.getModifierState('CapsLock');$('caps-lock-warning').classList.toggle('hidden',!caps||$('training-overlay').classList.contains('hidden'));};
  $('typing-capture').addEventListener('keydown',updateCaps);
