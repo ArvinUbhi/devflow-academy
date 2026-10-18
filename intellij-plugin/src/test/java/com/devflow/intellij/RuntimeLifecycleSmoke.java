@@ -56,7 +56,7 @@ public final class RuntimeLifecycleSmoke {
         try {
             HttpResponse<String> response = HTTP.send(HttpRequest.newBuilder(URI.create(URL + "/api/health"))
                     .timeout(Duration.ofSeconds(1)).GET().build(), HttpResponse.BodyHandlers.ofString());
-            return response.statusCode() == 200 && response.body().contains("\"version\":\"2.1.0\"");
+            return response.statusCode() == 200 && response.body().contains("\"version\":\"2.2.0\"");
         } catch (Exception ignored) { return false; }
     }
 
