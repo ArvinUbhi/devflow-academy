@@ -147,7 +147,7 @@ test('typing is the primary dashboard action and saved word-test results drive c
  assert.deepEqual(a.errors,[]);
 });
 test('missed-key focused practice is separated from normal personal-best tracking',async t=>{
- const initial={...E.defaultState(),weak:{z:9,x:2},history:[{date:'2026-10-17',kind:'wordtest',title:'Random words',wpm:53,accuracy:90,rhythm:80,seconds:45}]};
+ const initial={version:2,weak:{z:9,x:2},history:[{date:'2026-10-17',kind:'wordtest',title:'Random words',wpm:53,accuracy:90,rhythm:80,seconds:45}]};
  const a=await app(initial);t.after(()=>a.dom.window.close());
  const d=a.w.document;
  a.click('[data-view="wordtest"]');
