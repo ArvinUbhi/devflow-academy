@@ -1,6 +1,6 @@
 {
   "name": "devflow-academy",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "bin": {
     "devflow": "scripts/cli.cjs"
   },
@@ -14,5 +14,5 @@
   "devDependencies": {
     "jsdom": "^26.1.0"
   },
-  "description": "Advanced Java, low-latency engineering and random-word typing with an IntelliJ plugin"
+  "description": "Typing-first developer training with evidence-led coaching and a Java performance laboratory"
 }
