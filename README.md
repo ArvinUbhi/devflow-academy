@@ -1,6 +1,15 @@
 # devflow.
 
-**A Java 8-compatible Java and typing academy for software engineers.** Master touch typing, train in Java/Python/JavaScript/C#/SQL, develop editor fluency, improve a golf-inspired Typing Handicap, and track project-linked practice in the local CLI.
+**A typing-first training academy for software engineers, with advanced Java teaching.** Build touch-typing fluency with random words and evidence-led coaching, learn design patterns and low-latency engineering by typing real Java, and track progress locally.
+
+## New in v2.2
+
+- **Typing comes first:** the main dashboard now leads with a random-word test, your latest WPM/accuracy and a concrete next action. The daily Java challenge remains prominent.
+- **Evidence-led touch-typing coaching:** uses the latest five completed word tests, raw error counts, typing rhythm and user target. New learners receive baseline guidance rather than invented scores. Frequent missed keys drive optional focused word samples. **Focused practice is not counted as a standard WPM personal best**; counts of missed keys are not statistically adjusted for key frequency.
+- **Personalised post-test feedback:** 25/50/100-word tests include raw-accuracy advice, observed missed keys, next normal test and focused follow-up. The test uses the established paste-disabled input and locally saved history.
+- **Performance investigation workshops:** six realistic Java engineering scenarios about JMH validity, Flight Recorder, allocation elimination, concurrent ring buffers, percentile latency and GC decisions. Each includes measured-evidence guidance, a failure mode, code to type, an interactive decision question and a saved comprehension outcome.
+- **Optional real performance tooling:** a Maven/JMH sample in [perf-lab](perf-lab/README.md) comparing an allocation-heavy design with a primitive reduction, plus commands for JFR and GC logging. Requires a full JDK 17+ and Maven **only for the optional lab**, not for running DevFlow.
+- **Privacy and honesty:** the browser cannot benchmark a user's trading service, access IDE keystrokes, claim zero GC or automatically run JFR. Recommendations explain what was and was not measured.
 
 ## New in v2.1
 
@@ -22,7 +31,7 @@
 
 Touch typing still comes first: the 16 foundation lessons, multilingual code lab, Editor Gym, Typing Handicap, insights and repo-linked CLI are retained. Existing v1 progress migrates automatically, and v1/v2 backups can both be imported.
 
-Download the [installable IntelliJ plugin ZIP](downloads/devflow-intellij-2.1.0.zip), or run the standalone app below.
+Download the [installable IntelliJ plugin ZIP](downloads/devflow-intellij-2.2.0.zip), or run the standalone app below.
 
 ## Run in one command
 
