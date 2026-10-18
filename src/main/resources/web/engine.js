@@ -47,7 +47,7 @@
     return 'BEGINNER · FINDING YOUR FLOW';
   }
   function defaultState() {
-    return {version:2, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true,blurCompleted:false}, mastered:{},history:[],rounds:[],weak:{},java:{},daily:[],dailyDraft:null};
+    return {version:2, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true,blurCompleted:false}, mastered:{},history:[],rounds:[],weak:{},java:{},performance:{},daily:[],dailyDraft:null};
   }
   function sanitizeState(input) {
     const base = defaultState();
@@ -70,6 +70,16 @@
       for(const [id,value] of Object.entries(input.java)) {
         if(!/^java-([1-9]|[12]\d|3\d|4[0-4])$/.test(id)||!value||typeof value!=='object')continue;
         base.java[id]={mastered:value.mastered===true,attempts:clamp(Number(value.attempts)||0,0,100000),due:typeof value.due==='string'&&Number.isFinite(Date.parse(value.due))?value.due:null,last:typeof value.last==='string'?value.last.slice(0,30):null};
+      }
+    }
+    if(input.performance && typeof input.performance==='object' && !Array.isArray(input.performance)) {
+      for(const [id,progress] of Object.entries(input.performance)){
+        if(!/^(benchmark|jfr|allocations|ring|tail|gc)$/.test(id)||!progress||typeof progress!=='object')continue;
+        base.performance[id]={
+          attempts:clamp(Math.floor(Number(progress.attempts)||0),0,100000),
+          correct:progress.correct===true,
+          last:typeof progress.last==='string'&&Number.isFinite(Date.parse(progress.last))?progress.last.slice(0,30):null
+        };
       }
     }
     const validSegment=x=>x&&typeof x==='object'&&['seconds','characters','attempts','errors','accuracy','wpm'].every(k=>Number.isFinite(x[k])&&x[k]>=0)&&x.accuracy<=100&&x.errors<=x.attempts;
