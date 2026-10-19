@@ -54,7 +54,7 @@ try{
   if(width===390){
    assert.ok(await page.locator('#sidebar').evaluate(el=>el.getBoundingClientRect().right<=1),'Mobile menu must start off screen');
    await page.locator('#menu-toggle').click();await page.locator('#sidebar.open').waitFor();
-   await page.locator('#menu-toggle').click();await page.locator('#sidebar:not(.open)').waitFor();
+   await page.locator('#sidebar [data-view="insights"]').click();await page.locator('#sidebar:not(.open)').waitFor();
   }
  }
  assert.deepEqual(errors,[]);console.log('Browser smoke passed: timed test, results, 80-key map, JSON import/reload, progress charts, narrow widths.');
