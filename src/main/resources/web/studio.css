@@ -1,4 +1,5 @@
 /* Typing studio: calm, readable and usable inside a narrow IDE tool window. */
+.progress-block>.panel{min-width:0}
 .test-topline,.test-format,.keyboard-toolbar,.progress-filters{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
 .test-topline{justify-content:space-between;margin-bottom:32px}.local-pill{font-size:11px;color:var(--muted)}
 .test-format{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:22px}
