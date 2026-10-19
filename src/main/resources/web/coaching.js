@@ -23,8 +23,8 @@
     if(!recent.length){
       return {count:0,avgWpm:null,avgAccuracy:null,bestWpm,focusKeys,missed,
         title:'Establish your typing baseline',
-        advice:'Start with a 50-word random test. Keep your eyes on the screen and use the correct fingers. Repeat it a few times before chasing a faster WPM.',
-        next:'Take a normal 50-word test',action:'standard',
+        advice:'Start with a 30-second random test to set your first baseline. Keep your eyes on the screen and use the correct fingers. Repeat it a few times before chasing a faster WPM.',
+        next:'Take a normal test',action:'standard',
         evidence:'No completed random-word tests yet.'};
     }
     let title,advice,next,action='standard',evidence;
@@ -37,11 +37,11 @@
     }else if(rhythm!==null&&rhythm<60){
       title='Smooth out uneven keystrokes';
       advice='Accuracy is strong, but the rhythm estimate varies. Try an even, relaxed pace over whole words instead of accelerating between corrections. Rhythm excludes very short and long key intervals.';
-      next='Repeat a steady 50-word test';evidence='Estimated rhythm '+rhythm+'/100 across available tests.';
+      next='Repeat a steady test';evidence='Estimated rhythm '+rhythm+'/100 across available tests.';
     }else if(avgWpm<Number(goalWpm||65)){
       title='Build pace without losing control';
       advice='Your recent accuracy is good. Increase pace in small steps while staying above 96% accuracy. Compare several tests, not one unusually fast result.';
-      next='Try a new 50-word test';evidence='Recent average '+avgWpm+' WPM versus your '+Number(goalWpm||65)+' WPM target.';
+      next='Try a new random test';evidence='Recent average '+avgWpm+' WPM versus your '+Number(goalWpm||65)+' WPM target.';
     }else{
       title='Maintain consistency at your current speed';
       advice='Your latest results meet your target while keeping accuracy high. Mix normal and focused tests and review the trend across days instead of treating a single high score as your new baseline.';

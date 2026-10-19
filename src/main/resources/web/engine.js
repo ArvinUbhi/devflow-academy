@@ -5,6 +5,7 @@
   else root.DevFlowEngine = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
+  const K = typeof module === 'object' && module.exports ? require('./keyboards.js') : globalThis.DevFlowKeyboards;
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const round1 = n => Math.round(n * 10) / 10;
   const correctPrefix = (text, target) => {
@@ -47,7 +48,7 @@
     return 'BEGINNER · FINDING YOUR FLOW';
   }
   function defaultState() {
-    return {version:2, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true,blurCompleted:false}, mastered:{},history:[],rounds:[],weak:{},java:{},performance:{},daily:[],dailyDraft:null};
+    return {version:2, settings:{name:'Developer',language:'Java',layout:'QWERTY',minutes:15,goalWpm:65,showKeyboard:true,blurCompleted:false,keyboardProfile:'standard-us',keyboardLayer:0,typingMode:'time',typingDuration:30},keyboards:[], mastered:{},history:[],rounds:[],weak:{},java:{},performance:{},daily:[],dailyDraft:null};
   }
   function sanitizeState(input) {
     const base = defaultState();
@@ -61,9 +62,26 @@
       base.settings.goalWpm = clamp(Number(x.goalWpm)||65,20,180);
       base.settings.showKeyboard = x.showKeyboard !== false;
       base.settings.blurCompleted = x.blurCompleted === true;
+      base.settings.keyboardProfile=typeof x.keyboardProfile==='string'?x.keyboardProfile.slice(0,80):x.layout==='UK-QWERTY'?'standard-uk':'standard-us';
+      base.settings.keyboardLayer=clamp(Math.floor(Number(x.keyboardLayer)||0),0,31);
+      base.settings.typingMode=x.typingMode==='words'?'words':'time';
+      base.settings.typingDuration=[15,30,60].includes(x.typingDuration)?x.typingDuration:30;
     }
+    base.keyboards=K.sanitizeProfiles(input.keyboards);
+    if(!K.profiles(base).some(p=>p.id===base.settings.keyboardProfile))base.settings.keyboardProfile='standard-us';
     if (input.mastered && typeof input.mastered === 'object' && !Array.isArray(input.mastered)) base.mastered = Object.fromEntries(Object.entries(input.mastered).filter(([k,v])=>/^lesson-\d{1,2}$/.test(k) && v === true));
     if (Array.isArray(input.history)) base.history = input.history.filter(x => x && typeof x === 'object' && typeof x.date === 'string' && Number.isFinite(Date.parse(x.date)) && Number.isFinite(x.wpm) && Number.isFinite(x.accuracy)).slice(-10000);
+    // Keep compact scores long term and bounded diagnostic detail for recent tests.
+    let detail=0;
+    base.history=base.history.slice().reverse().map(row=>{
+      const r={...row};
+      if(Array.isArray(r.words)){
+        detail++;
+        if(detail<=100)r.words=r.words.slice(0,300).filter(w=>w&&typeof w.word==='string').map(w=>({word:w.word.slice(0,80),typed:String(w.typed||'').slice(0,160),errors:clamp(Number(w.errors)||0,0,10000),backspaces:clamp(Number(w.backspaces)||0,0,10000),ms:clamp(Number(w.ms)||0,0,3600000),correct:w.correct===true,partial:w.partial===true}));
+        else {delete r.words;delete r.samples;delete r.confusions;delete r.keyAttempts;delete r.keyMistakes;}
+      }
+      return r;
+    }).reverse();
     if (Array.isArray(input.rounds)) base.rounds = input.rounds.filter(x => x && typeof x === 'object' && Number.isFinite(x.score) && typeof x.date === 'string').slice(-1000);
     if (input.weak && typeof input.weak === 'object' && !Array.isArray(input.weak)) base.weak = Object.fromEntries(Object.entries(input.weak).filter(([k,v])=>k.length===1 && Number.isFinite(v) && v>=0).slice(0,100));
     if(input.java && typeof input.java==='object' && !Array.isArray(input.java)) {

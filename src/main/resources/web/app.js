@@ -1,6 +1,8 @@
 (() => {
 'use strict';
 const E = window.DevFlowEngine;
+const T = window.DevFlowTyping, K = window.DevFlowKeyboards;
+let studio = null;
 const Advanced = window.DevFlowAdvanced;
 const Coach = window.DevFlowCoaching;
 const Performance = window.DevFlowPerformance;
@@ -10,7 +12,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const formatDate = iso => new Date(iso).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
 const nowISO = () => new Date().toISOString();
 const round = E.round1;
-const titleFor = name => ({dashboard:'Overview',academy:'Typing academy',lab:'Code lab',editor:'Editor gym',handicap:'Typing handicap',insights:'Insights',projects:'Projects',settings:'Settings',daily:'Daily flow',java:'Advanced Java',wordtest:'Typing test',performance:'Performance lab',intellij:'IntelliJ IDEA'})[name];
+const titleFor = name => ({dashboard:'Overview',academy:'Typing academy',lab:'Code lab',editor:'Editor gym',handicap:'Typing handicap',insights:'Progress',keyboards:'My keyboards',projects:'Projects',settings:'Settings',daily:'Daily flow',java:'Advanced Java',wordtest:'Typing test',performance:'Performance lab',intellij:'IntelliJ IDEA'})[name];
 
 const LESSONS = [
  {title:'Meet your home row',focus:'A S D F · J K L ;',level:'FOUNDATION',time:'3 min',guide:'Place your index fingers on F and J (the raised bumps). Keep wrists neutral. Always return your fingers home. Type slowly with the correct fingers.',target:'asdf jkl; asdf jkl; fj fj dk dk sl sl a; a; f j d k s l'},
@@ -82,18 +84,35 @@ let dailyPlan = null;
 let projectInfo = {active:null,sessions:[]};
 let wordtestSample = '';
 let performanceCurrent = null,performanceAnswered = false;
-function typingCoach(){return Coach.analyzeTyping(state.history,state.weak,state.settings.goalWpm);}
+function typingCoach(){
+ const rows=T.filterHistory(state.history,{profile:K.active(state).id,practice:true});
+ const weak={};for(const r of rows)for(const [key,n] of Object.entries(r.keyMistakes||{}))weak[key]=(weak[key]||0)+n;
+ return Coach.analyzeTyping(rows,weak,state.settings.goalWpm);
+}
 function makeWordtest(){
  const focus=$('wordtest-mode').value==='focus'?typingCoach().focusKeys:[];
  wordtestSample=Advanced.generateWords(Number($('wordtest-count').value),{numbers:$('wordtest-numbers').checked,punctuation:$('wordtest-punctuation').checked,focusKeys:focus});
  $('wordtest-preview').textContent=wordtestSample;
 }
+function configureWordtest(){
+ const timed=$('wordtest-format').value==='time';
+ $('wordtest-count').disabled=timed;
+ $$('[data-duration]').forEach(b=>{const chosen=Number(b.dataset.duration)===state.settings.typingDuration;b.classList.toggle('selected',chosen);b.setAttribute('aria-pressed',String(chosen));b.disabled=!timed;});
+ renderWordtestCoach();
+ $('wordtest-start').textContent=timed?'Start '+state.settings.typingDuration+'-second test →':'Start '+$('wordtest-count').value+'-word test →';
+}
 function startWordtest(){
  const useFocus=$('wordtest-mode').value==='focus'&&typingCoach().focusKeys.length>0;
  if($('wordtest-mode').value==='focus'&&!useFocus)toast('No missed-key history yet; starting a normal random-word test.');
  experience?.cancel();makeWordtest();
- const count=Number($('wordtest-count').value);
- runTyping({id:'wordtest-'+Date.now(),title:useFocus?'Weak-key word practice':'Random words',target:wordtestSample,wordCount:count,description:'Type with the correct fingers. Raw mistakes count even after correction.'},useFocus?'wordtest-focus':'wordtest');
+ const timed=$('wordtest-format').value==='time',count=Number($('wordtest-count').value);
+ const options={numbers:$('wordtest-numbers').checked,punctuation:$('wordtest-punctuation').checked,focusKeys:useFocus?typingCoach().focusKeys:[]};
+ const sample=timed?Advanced.generateWords(200,options):wordtestSample;
+ runTyping({id:'wordtest-'+Date.now(),title:useFocus?'Weak-key word practice':timed?state.settings.typingDuration+' seconds. Find your flow.':'Random words',target:sample,wordCount:timed?null:count,duration:timed?state.settings.typingDuration:0,options,description:'Space advances to the next word. Backspace fixes the current word. The clock starts with your first character.'},useFocus?'wordtest-focus':'wordtest');
+}
+function startWordPractice(words,kind,title){
+ if(!words.length){toast('Complete a test with mistakes to unlock this practice.');return;}
+ experience?.cancel();runTyping({id:kind+'-'+Date.now(),title,target:words.join(' '),wordCount:words.length,duration:0,options:{},description:'A focused drill for your active keyboard. This practice does not count towards normal personal bests.'},kind);
 }
 function startFocusedWordtest(){$('wordtest-mode').value='focus';makeWordtest();startWordtest();}
 function projectTags() { const a=projectInfo.active;return a && a.repo ? {sessionId:a.id,projectId:a.repo.id,project:a.repo.name} : {}; }
@@ -110,6 +129,7 @@ async function loadState() {
     toast('Offline storage fallback in use; progress will stay in this browser');
   }
   await refreshProject();
+  $('wordtest-format').value=state.settings.typingMode;configureWordtest();
   renderAll();
 }
 function saveState() {
@@ -146,6 +166,7 @@ function go(view) {
   $('sidebar').classList.remove('open');
   if (view==='insights') renderInsights();
   if (view==='performance') renderPerformance();
+  if (view==='keyboards') studio?.renderKeyboard();
   if (view==='handicap') renderHandicap();
   if (view==='projects') refreshProject();
   window.scrollTo({top:0,behavior:'instant'});
@@ -216,15 +237,7 @@ function renderHandicap(){
  $('handicap-round-count').textContent=`${state.rounds.length} ROUND${state.rounds.length!==1?'S':''}`;
  $('rounds-history').innerHTML=state.rounds.length?`<table class="list-table"><thead><tr><th>DATE</th><th>ROUND SCORE</th><th>CLASSIFICATION</th></tr></thead><tbody>${state.rounds.slice().reverse().map(r=>`<tr><td>${esc(formatDate(r.date))}</td><td>${Number(r.score).toFixed(1)}</td><td>${esc(E.tier(r.score))}</td></tr>`).join('')}</tbody></table>`:'<div class="list-empty">Your first benchmark is ready whenever you are.</div>';
 }
-function renderInsights(){
- const ds=dataStats(); const latest=state.history.filter(x=>!['edit','java-recall'].includes(x.kind)).slice(-12);
- const cards=[['COMPLETED SESSIONS',ds.count,'Sessions recorded'],['PRACTICE TIME',ds.minutes+'m','Minutes on keyboard'],['AVERAGE ACCURACY',ds.accuracy===null?'—':ds.accuracy+'%','Recent 20 sessions'],['CURRENT HANDICAP',ds.index===null?'—':ds.index.toFixed(1),'Lower is better']];
- $('insight-stats').innerHTML=cards.map(x=>`<div class="insight-stat"><span>${x[0]}</span><strong>${x[1]}</strong><small>${x[2]}</small></div>`).join('');
- barChart($('speed-chart'),latest,{big:true});
- let weak=topWeak();
- $('weak-keys').innerHTML=weak.length?weak.map(([k,count])=>`<div class="weak-row"><div class="weak-key">${esc(k===' '?'␣':k==='\n'?'↵':k)}</div><div class="weak-meter"><div style="width:${Math.min(100,count/Math.max(1,weak[0][1])*100)}%"></div></div><span>${count} misses</span></div>`).join(''):'<div class="list-empty">Your mistyped keys will appear here as you practise.</div>';
- $('session-history').innerHTML=latest.length?`<table class="list-table"><thead><tr><th>DATE</th><th>EXERCISE</th><th>WPM</th><th>ACCURACY</th><th>TIME</th></tr></thead><tbody>${latest.slice().reverse().map(h=>`<tr><td>${esc(formatDate(h.date))}</td><td>${esc(h.title||h.kind)}</td><td>${round(h.wpm)}</td><td>${round(h.accuracy)}%</td><td>${Math.round(h.seconds)}s</td></tr>`).join('')}</tbody></table>`:'<div class="list-empty">No sessions yet. Take your first lesson to start tracking progress.</div>';
-}
+function renderInsights(){studio?.renderProgress();}
 function trendGraph(el, entries, field, label){
  const values=entries.filter(x=>Number.isFinite(x[field])).slice(-30);
  if(!values.length){el.innerHTML='<div class="chart-empty">Complete a repo-linked session to see your trend</div>';return;}
@@ -265,11 +278,13 @@ function renderWordtestCoach(){
  $('wordtest-coach-title').textContent=data.title;
  $('wordtest-coach-advice').textContent=data.advice;
  $('wordtest-coach-evidence').textContent=data.evidence+(data.missed.length?' Most missed keys by raw count: '+data.missed.map(k=>k.label+' ('+k.count+')').join(', ')+'. Counts are not error rates.':'');
- const metrics=[['RECENT AVERAGE WPM',data.avgWpm??'—'],['RAW ACCURACY',data.avgAccuracy===null?'—':data.avgAccuracy+'%'],['BEST NORMAL TEST',data.bestWpm??'—'],['COMPLETED TESTS',data.count]];
+ const comparable=T.filterHistory(state.history,{profile:K.active(state).id}).filter(r=>(r.baseLayer||0)===(state.settings.keyboardLayer||0)&&!!r.punctuation===$('wordtest-punctuation').checked&&!!r.numbers===$('wordtest-numbers').checked&&($('wordtest-format').value==='time'?r.duration===state.settings.typingDuration:!r.duration&&r.wordCount===Number($('wordtest-count').value)));
+ const best=comparable.length?Math.max(...comparable.map(r=>r.wpm)):'—';
+ const metrics=[['RECENT AVERAGE WPM',data.avgWpm??'—'],['RAW ACCURACY',data.avgAccuracy===null?'—':data.avgAccuracy+'%'],['BEST AT THESE SETTINGS',best],['COMPLETED TESTS',data.count]];
  $('wordtest-metrics').innerHTML=metrics.map(([label,value])=>'<div class="insight-stat"><span>'+label+'</span><strong>'+value+'</strong></div>').join('');
  $('wordtest-coach-action').textContent=data.next+' →';
 }
-function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();renderWordtestCoach();renderPerformance();experience?.render();}
+function renderAll(){renderDashboard();renderAcademy();renderLab();renderEditor();renderHandicap();renderInsights();renderSettings();renderProjects();renderWordtestCoach();renderPerformance();studio?.render();experience?.render();}
 
 function weakTarget() {
  const focus = topWeak(3).map(([k])=>k.toLowerCase());
@@ -298,6 +313,15 @@ function runTyping(item, kind, assessmentIndex=null, fromDaily=false) {
  if(!fromDaily) dailyPlan=null;
  leaveTraining(fromDaily);
  training={item,kind,assessmentIndex,dailyIndex:fromDaily&&dailyPlan?dailyPlan.index:null,text:'',errors:0,errorsByKey:{},attempts:0,start:null,intervals:[],lastKeyTime:null,intervalTimer:null};
+ studio?.clearResult();
+ if(kind.startsWith('wordtest')){
+   training.wordSession=new T.Session({words:item.target.split(' '),seconds:item.duration,wordCount:item.wordCount});
+   training.profile=K.active(state);training.baseLayer=state.settings.keyboardLayer||0;
+ }
+ $('typing-timer-track').classList.toggle('hidden',!item.duration);
+ $('typing-test-status').textContent=kind.startsWith('wordtest')?'Ready when you are · '+K.active(state).name:'';
+ $('typing-capture').readOnly=false;
+
  $('trainer-learning').classList.add('hidden');
  $('finish-share').classList.add('hidden');
  $('training-overlay').classList.remove('hidden');
@@ -307,8 +331,8 @@ function runTyping(item, kind, assessmentIndex=null, fromDaily=false) {
  $('blur-toggle').textContent='◐ Blur typed text: '+(state.settings.blurCompleted?'On':'Off');
  document.querySelector('.app-shell')?.setAttribute('inert','');
  $('trainer-typing').classList.remove('hidden'); $('trainer-editor').classList.add('hidden'); $('trainer-finish').classList.add('hidden');
- $('trainer-eyebrow').textContent=kind==='lesson'?'ACADEMY · '+item.level:kind==='drill'?'TARGETED COACHING':kind==='wordtest'?'RANDOM WORD TEST':kind==='code'?item.language.toUpperCase()+' · '+item.difficulty:kind==='daily-flow'?'DAILY FLOW':'OFFICIAL BENCHMARK · SEGMENT '+(assessmentIndex+1)+' / 3';
- $('training-counter').textContent=kind==='assessment'?'HANDICAP ROUND · '+(assessmentIndex+1)+'/3':kind==='lesson'?'FOCUSED PRACTICE':kind==='drill'?'WEAK SPOT WORKOUT':kind==='wordtest'?'TOUCH TYPING · RANDOM WORDS':'DEVELOPER CODE LAB';
+ $('trainer-eyebrow').textContent=kind==='lesson'?'ACADEMY · '+item.level:kind==='drill'?'TARGETED COACHING':kind.startsWith('wordtest')?'TOUCH TYPING':kind==='code'?item.language.toUpperCase()+' · '+item.difficulty:kind==='daily-flow'?'DAILY FLOW':'OFFICIAL BENCHMARK · SEGMENT '+(assessmentIndex+1)+' / 3';
+ $('training-counter').textContent=kind==='assessment'?'HANDICAP ROUND · '+(assessmentIndex+1)+'/3':kind==='lesson'?'FOCUSED PRACTICE':kind==='drill'?'WEAK SPOT WORKOUT':kind.startsWith('wordtest')?'TOUCH TYPING · '+K.active(state).name:'DEVELOPER CODE LAB';
  $('training-title').textContent=item.title;
  $('training-description').textContent=kind==='lesson'||kind==='drill'?item.guide:kind==='code'?'Reproduce the code exactly. Maintain case, indentation, whitespace and punctuation.':item.description;
  $('typing-label').textContent=kind==='assessment'?'OFFICIAL ASSESSMENT · NO PASTING':'TYPE THE TEXT BELOW';
@@ -366,8 +390,21 @@ function keyName(char){
  if(char===' ')return 'SPACE';if(char==='\n')return 'ENTER';if(char==='\t')return 'TAB';return char.toUpperCase();
 }
 function renderKeyboard(next){
- const physical=window.DevFlowChallenge.keyboardKey(next,state.settings.layout);
- const rows=['`1234567890-=','QWERTYUIOP[]'+String.fromCharCode(92),'ASDFGHJKL;'+String.fromCharCode(39)+(state.settings.layout==='UK-QWERTY'?'#':''),'ZXCVBNM,./'];
+ const signature=[next,state.settings.keyboardProfile,state.settings.keyboardLayer].join('|');
+ if(training?.keyboardSignature===signature)return;
+ if(training)training.keyboardSignature=signature;
+ const profile=training?.profile||K.active(state);
+ if(profile.type==='glove80'){
+   const base=training?.baseLayer??state.settings.keyboardLayer??0;
+   const found=K.locate(profile,next,Math.min(base,profile.layers.length-1));
+   const layer=found?.layer??Math.min(base,profile.layers.length-1);
+   $('virtual-keyboard').innerHTML=K.svg(profile,{layer,next});
+   $('next-key-label').textContent=found?'NEXT · '+K.display(next)+' · '+(found.shift?'Shift + ':'')+found.pos+' · '+(found.hand==='LH'?'Left ':'Right ')+found.finger+' · '+profile.layer_names[layer]:'No direct mapping for '+K.display(next)+' · check custom behaviours';
+   return;
+ }
+ const standardLayout=profile.locale==='en-GB'?'UK-QWERTY':'QWERTY';
+ const physical=window.DevFlowChallenge.keyboardKey(next,standardLayout);
+ const rows=['`1234567890-=','QWERTYUIOP[]'+String.fromCharCode(92),'ASDFGHJKL;'+String.fromCharCode(39)+(standardLayout==='UK-QWERTY'?'#':''),'ZXCVBNM,./'];
  let keys=rows.map((r,i)=>`<div class="kb-row">${Array.from(r).map(x=>`<div class="keycap ${i===2?'home':''} ${x===physical.key?'active':''}">${esc(x)}</div>`).join('')}</div>`).join('');
  keys+=`<div class="kb-row"><div class="keycap ${physical.shift?'active':''}">Shift</div><div class="keycap space ${physical.key==='SPACE'?'active':''}">SPACE</div><div class="keycap ${physical.key==='ENTER'?'active':''}">↵</div></div>`;
  $('virtual-keyboard').innerHTML=keys;
@@ -375,7 +412,8 @@ function renderKeyboard(next){
 }
 
 function updateTypingDisplay(){
- if(!training||training.kind==='edit'||!training.item)return;
+ if(!training||training.kind==='edit'||!training.item||training.finished)return;
+ if(training.wordSession){renderWordSession();return;}
  const item=training.item,typed=training.text;
  const chars=Array.from(item.target);
  const lastComplete=Math.max(typed.lastIndexOf(' '),typed.lastIndexOf('\n'));
@@ -396,9 +434,42 @@ function updateTypingDisplay(){
  $('trainer-coach').textContent=typed.length&&typed[typed.length-1]!==item.target[typed.length-1]?'✦ Look at the highlighted key, correct it, then continue.':'✦ Smooth, accurate typing beats rushing.';
  if (state.settings.showKeyboard)renderKeyboard(item.target[typed.length]||'');
 }
+function renderWordSession(){
+ const t=training;if(!t?.wordSession||t.finished)return;
+ const ws=t.wordSession,now=performance.now();
+ if(ws.expired(now)){ws.finish(now);finishTyping();return;}
+ ws.sample(now);
+ if(ws.duration&&ws.words.length-ws.index<40)ws.words.push(...Advanced.generateWords(200,t.item.options).split(' '));
+ const start=Math.max(0,ws.index-8),end=Math.min(ws.words.length,ws.index+35);
+ const signature=ws.index+'|'+ws.current+'|'+state.settings.blurCompleted;
+ if(t.promptSignature!==signature){t.promptSignature=signature;
+ $('typing-prompt').innerHTML=ws.words.slice(start,end).map((word,j)=>{
+  const i=start+j,row=ws.rows[i],typed=i===ws.index?ws.current:row?.typed||'';
+  const active=i===ws.index,done=i<ws.index;
+  const content=Array.from(word).map((c,n)=>'<span class="'+(n<typed.length?(typed[n]===c?'prompt-correct':'prompt-wrong'):active&&n===typed.length?'prompt-current':done?'prompt-wrong':'prompt-upcoming')+'">'+esc(c)+'</span>').join('');
+  const extra=typed.slice(word.length);
+  return '<span class="prompt-word '+(done&&state.settings.blurCompleted?'prompt-blurred':'')+'">'+content+(extra?'<span class="prompt-wrong">'+esc(extra)+'</span>':'')+(active&&typed.length>=word.length?'<span class="prompt-current"> </span>':'')+'</span>';
+ }).join(' ');
+ $('typing-prompt').querySelector('.prompt-current')?.scrollIntoView?.({block:'nearest'});}
+ const stats=ws.measure(now);
+ $('live-wpm').textContent=stats.wpm;$('live-accuracy').textContent=stats.accuracy;$('live-errors').textContent=stats.errors;
+ $('live-time').textContent=ws.duration?Math.ceil(ws.remaining(now))+'s':Math.floor(stats.seconds/60)+':'+String(Math.floor(stats.seconds%60)).padStart(2,'0');
+ $('typing-progress').textContent=ws.index+' words'+(ws.duration?'':' / '+ws.limit);
+ $('typing-timer-fill').style.width=(ws.duration?100*ws.remaining(now)/ws.duration:0)+'%';
+ $('typing-test-status').textContent=(ws.started===null?'First character starts the clock':'Test in progress · clock keeps running')+' · '+t.profile.name;
+ $('trainer-coach').textContent='✦ Finish the word, then press Space. Correct mistakes with Backspace before moving on.';
+ if(state.settings.showKeyboard)renderKeyboard(ws.words[ws.index]?.[ws.current.length]||' ');
+}
 function captureInput(value){
- if(!training||training.kind==='edit'||!training.item)return;
+ if(!training||training.kind==='edit'||!training.item||training.finished)return;
  const t=training;
+ if(t.wordSession){
+   const ws=t.wordSession;ws.input(value,performance.now());
+   $('typing-capture').value=ws.current;
+   if(ws.finished){finishTyping();return;}
+   if(ws.started!==null&&!liveTicker)liveTicker=setInterval(updateTypingDisplay,100);
+   updateTypingDisplay();return;
+ }
  if(value.length>t.item.target.length){$('typing-capture').value=t.text;return;}
  if(!t.start&&value.length){t.start=performance.now();liveTicker=setInterval(updateTypingDisplay,500);}
  const changes=window.DevFlowChallenge.changedInput(t.text,value,t.item.target);
@@ -416,7 +487,8 @@ function captureInput(value){
  if(t.text===t.item.target)finishTyping();
 }
 function finishTyping(){
- const t=training;if(!t)return;
+ const t=training;if(!t||t.finished)return;
+ if(t.wordSession){finishWordSession();return;}
  const stats=computeLive();
  if(liveTicker){clearInterval(liveTicker);liveTicker=null;}
  const result={date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,wpm:stats.wpm,accuracy:stats.accuracy,rhythm:stats.rhythm,errors:stats.errors,seconds:round(stats.seconds),wordCount:t.item.wordCount,keyMistakes:t.errorsByKey,...projectTags()};
@@ -466,6 +538,17 @@ function finishTyping(){
  }
  renderAll();
 }
+function finishWordSession(){
+ const t=training;if(!t||t.finished)return;
+ const ws=t.wordSession;if(!ws.finished)ws.finish(performance.now());
+ t.finished=true;if(liveTicker){clearInterval(liveTicker);liveTicker=null;}
+ const result={...ws.result,date:nowISO(),id:t.item.id,kind:t.kind,title:t.item.title,profileId:t.profile.id,profileName:t.profile.name,baseLayer:t.baseLayer,testMode:ws.duration?'time':'words',duration:ws.duration,wordCount:ws.duration?null:ws.limit,punctuation:!!t.item.options?.punctuation,numbers:!!t.item.options?.numbers,...projectTags()};
+ for(const [key,n] of Object.entries(result.keyMistakes))state.weak[key]=(state.weak[key]||0)+n;
+ state.history.push(result);saveState();
+ $('typing-capture').readOnly=true;
+ showFinish({eyebrow:ws.duration?'TIME. NICE WORK.':'WORD PRACTICE COMPLETE',title:result.wpm+' WPM · '+result.accuracy+'% accuracy',description:'Every session is a step forward. Use your actual mistakes to choose the next one.',stats:result,coaching:result.accuracy<96?'Try a steadier pace, then practise the words below. Corrected mistakes stay in your raw accuracy.':'Keep this accuracy as you build pace. Compare tests with the same keyboard and duration.',next:()=>t.kind==='wordtest'||t.kind==='wordtest-focus'?startWordtest():startWordPractice(t.item.target.split(' '),t.kind,t.item.title),nextLabel:'Another test →'});
+ studio.result(result);$('finish-focused').classList.remove('hidden');renderAll();
+}
 function coachFeedback(s){
  if(s.accuracy<94)return `Focus on accuracy next time. ${s.errors} correction${s.errors!==1?'s':''} were needed — slow down until the movements feel natural.`;
  if(s.rhythm<55)return 'Your accuracy is strong. Try an even rhythm rather than sudden bursts of speed.';
@@ -476,6 +559,7 @@ function showFinish({eyebrow,title,description,stats,coaching,next,nextLabel}){
  if(!training)return;
  $('trainer-learning').classList.add('hidden');$('finish-share').classList.add('hidden');
  $('finish-focused').classList.add('hidden');
+ $('finish-analysis').classList.add('hidden');
  training.finishNext=next;
  $('trainer-typing').classList.add('hidden');$('trainer-editor').classList.add('hidden');$('trainer-finish').classList.remove('hidden');
  $('finish-eyebrow').textContent=eyebrow;$('finish-title').textContent=title;$('finish-description').textContent=description;
@@ -570,6 +654,7 @@ function setupActions(){
     return;
   }
   const perfClose=ev.target.closest('[data-performance-close]');if(perfClose){performanceCurrent=null;$('performance-lesson-detail').classList.add('hidden');return;}
+  const durationButton=ev.target.closest('[data-duration]');if(durationButton){state.settings.typingDuration=Number(durationButton.dataset.duration);configureWordtest();saveState();return;}
   const nav=ev.target.closest('[data-view]');if(nav){go(nav.dataset.view);return;}
   const goto=ev.target.closest('[data-go]');if(goto){go(goto.dataset.go);return;}
   const action=ev.target.closest('[data-action]');if(action&&action.dataset.action==='assessment'){startAssessment();return;}
@@ -592,7 +677,8 @@ function setupActions(){
  $('wordtest-coach-action').addEventListener('click',()=>{$('wordtest-mode').value=typingCoach().action;startWordtest();});
  $('finish-focused').addEventListener('click',startFocusedWordtest);
  $('wordtest-refresh').addEventListener('click',makeWordtest);
- $('wordtest-count').addEventListener('change',makeWordtest);
+ $('wordtest-count').addEventListener('change',()=>{makeWordtest();configureWordtest();});
+ $('wordtest-format').addEventListener('change',()=>{state.settings.typingMode=$('wordtest-format').value;configureWordtest();saveState();});
  $('wordtest-mode').addEventListener('change',makeWordtest);
  $('wordtest-punctuation').addEventListener('change',makeWordtest);
  $('wordtest-numbers').addEventListener('change',makeWordtest);
@@ -607,6 +693,7 @@ function setupActions(){
  $('typing-capture').addEventListener('drop',e=>e.preventDefault());
  $('typing-capture').addEventListener('input',e=>captureInput(e.target.value));
  $('typing-capture').addEventListener('keydown',e=>{
+  if(e.key==='Tab'&&training?.wordSession){return;}
   if(e.key==='Tab'){
     e.preventDefault();const t=training;if(t&&t.kind!=='edit'){
       const inp=$('typing-capture');inp.value=inp.value.slice(0,inp.selectionStart)+'    '+inp.value.slice(inp.selectionEnd);captureInput(inp.value);
@@ -623,7 +710,8 @@ function setupActions(){
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.defaultPrevented&&training){leaveTraining();renderAll();}});
  $('preferences-form').addEventListener('submit',async e=>{
    e.preventDefault();
-   state.settings={name:$('setting-name').value.trim()||'Developer',language:$('setting-language').value,layout:$('setting-layout').value,minutes:Number($('setting-minutes').value),goalWpm:Number($('setting-wpm').value),showKeyboard:$('setting-keyboard').checked,blurCompleted:$('setting-blur').checked};
+   state.settings={...state.settings,name:$('setting-name').value.trim()||'Developer',language:$('setting-language').value,layout:$('setting-layout').value,minutes:Number($('setting-minutes').value),goalWpm:Number($('setting-wpm').value),showKeyboard:$('setting-keyboard').checked,blurCompleted:$('setting-blur').checked};
+   if(K.active(state).type==='standard')state.settings.keyboardProfile=state.settings.layout==='UK-QWERTY'?'standard-uk':'standard-us';
    await saveState();renderAll();$('settings-feedback').textContent='Settings saved successfully.';toast('Preferences updated');
  });
  $('export-btn').addEventListener('click',()=>{
@@ -641,8 +729,11 @@ function setupActions(){
   state=E.defaultState();await saveState();renderAll();toast('Progress reset');
  });
 }
+studio=window.DevFlowStudio.create({state:()=>state,save:saveState,startPractice:startWordPractice,notify:toast,onProfileChange:renderWordtestCoach});
 experience=window.DevFlowExperience.create({state:()=>state,save:saveState,notify:toast,go,leave:leaveTraining,type:runTyping,edit:runEditor,finish:showFinish,result:opts=>{training={kind:'result'};showFinish(opts);}});
 setupActions();
+document.addEventListener('visibilitychange',()=>{if(training?.wordSession)updateTypingDisplay();});
+$('typing-capture').addEventListener('blur',()=>{if(training?.wordSession&&!training.finished)$('typing-test-status').textContent='Click the text to refocus · the clock keeps running';});
 renderPerformance();
 makeWordtest();
 loadState();

@@ -27,7 +27,7 @@ test('UI initialises and a three-part daily training session advances', async ()
   };
   let saved=null;
   const context={
-    window:{DevFlowEngine:E,DevFlowJava:require('../src/main/resources/web/curriculum.js'),DevFlowAdvanced:require('../src/main/resources/web/advanced.js'),DevFlowCoaching:require('../src/main/resources/web/coaching.js'),DevFlowPerformance:require('../src/main/resources/web/performance-coach.js'),DevFlowChallenge:require('../src/main/resources/web/challenge.js'),scrollTo(){}},
+    window:{DevFlowEngine:E,DevFlowTyping:require('../src/main/resources/web/typing.js'),DevFlowKeyboards:require('../src/main/resources/web/keyboards.js'),DevFlowStudio:{create:()=>({render(){},renderProgress(){},renderKeyboard(){},clearResult(){}})},DevFlowJava:require('../src/main/resources/web/curriculum.js'),DevFlowAdvanced:require('../src/main/resources/web/advanced.js'),DevFlowCoaching:require('../src/main/resources/web/coaching.js'),DevFlowPerformance:require('../src/main/resources/web/performance-coach.js'),DevFlowChallenge:require('../src/main/resources/web/challenge.js'),scrollTo(){}},
     document:{getElementById:node,querySelector(){return null;},querySelectorAll(){return [];},addEventListener(type,fn){(docListeners[type]??=[]).push(fn);}},
     fetch:async(path,opts)=>path==='/api/state'&&(!opts||opts.method!=='PUT')?{ok:true,json:async()=>null}:{ok:true,json:async()=>({saved:true})},
     localStorage:{setItem(k,v){saved=v},getItem(){return saved}},

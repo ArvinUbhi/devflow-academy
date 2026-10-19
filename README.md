@@ -2,6 +2,27 @@
 
 **A typing-first training academy for software engineers, with advanced Java teaching.** Build touch-typing fluency with random words and evidence-led coaching, learn design patterns and low-latency engineering by typing real Java, and track progress locally.
 
+## New in v2.3: typing studio and Glove80
+
+- **15 / 30 / 60-second tests**, starting with the first character. The deadline continues through idle time and tab switches; late inputs are rejected. Fresh words replenish throughout a timed test. Existing 25 / 50 / 100-word tests remain available.
+- **Word-level feedback:** clean, corrected, incorrect and unfinished words; raw mistakes, deleted characters, character substitutions and word timing. Space advances to the next word; Backspace corrects the current word. Practise your missed words directly from results or Progress.
+- **Progress:** comparable speed/accuracy charts, per-configuration personal bests, latest-five versus preceding-five trends, a 28-day activity grid, keyboard/duration/date filters and CSV export. Key error rates include attempt counts and flag small samples. Focused drills are excluded from standard records. Imported/old sessions without a keyboard are labelled as earlier unassigned sessions.
+- **Two keyboard journeys:** standard US/UK QWERTY and an 80-key MoErgo Glove80 schematic, layer selector, position/finger hints, character-error colouring and selected-key drills. Keyboard, mapping fingerprint, selected layer, test duration, word count, numbers and punctuation distinguish comparable records.
+- **Import your MoErgo mapping:** in [MoErgo Layout Editor](https://my.moergo.com/glove80), enable **Settings → Local Backup and Restore**, then **Export → JSON**. In DevFlow choose **My keyboards → Import MoErgo JSON**. Up to eight layouts are saved with local progress. Renaming an unchanged mapping preserves its identity; changing bindings creates a separate baseline.
+- **Sharing:** copy a compact typing score with its keyboard and test options, with a manual-copy fallback. No account or global leaderboard is needed.
+
+### Glove80 support boundaries
+
+The importer reads the MoErgo `layers` / `layer_names` JSON format and nested `value` / `params` bindings (including numeric parameters), with 80 keys per layer, up to 32 layers, and a 1 MB input limit. It decodes `&kp`, standard `&mt` / `&lt` tap characters, layer-key labels, transparent/disabled keys, common ZMK keycode aliases and Shift wrappers. It does **not** execute source code. Unknown custom behaviours, macros, combos, tap dances and non-English locales stay visibly labelled as reference-only. The selected layer is shown over the base layer for transparent-key previews; the browser cannot discover the physical firmware layer stack, distinguish duplicate bindings, measure hold-tap timing or flash firmware. Import JSON, not `.uf2` firmware or `.keymap` source. English US and UK Windows/Linux output are supported; UK macOS and other locales need manual reference.
+
+The bundled factory map follows MoErgo's [official configuration](https://github.com/moergo-sc/glove80-zmk-config/blob/main/config/glove80.keymap). The schematic follows the official [position numbering](https://docs.moergo.com/layout-editor-guide/advanced-usage-custom-defined-behaviors/#key-positions) and [finger columns](https://docs.moergo.com/glove80-user-guide/typing-with-glove80/). Export workflow: [MoErgo JSON documentation](https://docs.moergo.com/layout-editor-guide/advanced-usage-export-import/). Binding semantics: [ZMK hold-taps](https://zmk.dev/docs/keymaps/behaviors/hold-tap). These sources were checked on 18 October 2026; MoErgo describes its JSON format as experimental. Factory binding data is MIT-licensed; attribution is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### Typing measurements and storage
+
+Effective WPM = (characters in correctly finished words, including their submitted spaces, plus the correct prefix of the current word) ÷ 5 ÷ elapsed minutes. An incorrect finished word contributes no effective characters. Raw WPM counts attempted characters, including corrections. Raw accuracy counts correct insertion attempts / all insertion attempts; a premature word delimiter is a mistake. A word interrupted by the timer is marked unfinished, not failed. Word duration includes pauses and corrections. Consistency is `max(0, 100 × (1 − standard deviation / mean))` of per-second attempt rates, available after three samples; it is a descriptive measure, not a standardised typing rating. Scores are local and self-reported; this is not an anti-cheat system.
+
+Summary history retains up to 10,000 sessions. Word/key/sample diagnostics are retained for the latest 100 word tests (maximum 300 word rows per test). Progress JSON includes saved keyboard mappings. Earlier summary scores remain available after detailed diagnostics age out. Nothing is sent to MoErgo or a cloud service when importing a layout.
+
 ## New in v2.2
 
 - **Typing comes first:** the main dashboard now leads with a random-word test, your latest WPM/accuracy and a concrete next action. The daily Java challenge remains prominent.
@@ -31,7 +52,7 @@
 
 Touch typing still comes first: the 16 foundation lessons, multilingual code lab, Editor Gym, Typing Handicap, insights and repo-linked CLI are retained. Existing v1 progress migrates automatically, and v1/v2 backups can both be imported.
 
-Download the [installable IntelliJ plugin ZIP](downloads/devflow-intellij-2.2.0.zip), or run the standalone app below.
+Download the [installable IntelliJ plugin ZIP](downloads/devflow-intellij-2.3.0.zip), or run the standalone app below.
 
 ## Run in one command
 

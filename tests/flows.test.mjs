@@ -15,7 +15,7 @@ async function app(initial=null,clipboard=true){
   return{ok:true,json:async()=>saved};
  };
  if(clipboard)Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async x=>{copied=x;}}});
- for(const file of ['engine.js','curriculum.js','advanced.js','coaching.js','performance-coach.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
+ for(const file of ['keyboards.js','typing.js','studio.js','engine.js','curriculum.js','advanced.js','coaching.js','performance-coach.js','challenge.js','experience.js','app.js'])w.eval(await readFile(new URL(file,root),'utf8'));
  await new Promise(r=>setTimeout(r,10));
  const click=sel=>{const el=w.document.querySelector(sel);assert.ok(el,`Missing ${sel}`);el.click();return el;};
  const finishTyping=()=>{
@@ -94,12 +94,13 @@ test('random-word test supports fresh prompts, blur focus and Caps Lock warning'
  assert.equal(original.split(' ').length,50);
  a.click('#wordtest-refresh');
  assert.notEqual(preview.textContent,original);
+ d.getElementById('wordtest-format').value='words';
  a.click('#wordtest-start');
  const typing=d.getElementById('typing-capture');
  assert.equal(d.getElementById('training-title').textContent,'Random words');
  a.click('#blur-toggle');
  assert.equal(d.getElementById('blur-toggle').getAttribute('aria-pressed'),'true');
- const target=d.getElementById('typing-prompt').textContent;
+ const target=d.getElementById('wordtest-preview').textContent;
  const firstSpace=target.indexOf(' ');
  for(const ch of target.slice(0,firstSpace+1)){typing.value+=ch;typing.dispatchEvent(new a.w.Event('input',{bubbles:true}));}
  assert.ok(d.querySelector('.prompt-blurred'));
@@ -136,23 +137,25 @@ test('typing is the primary dashboard action and saved word-test results drive c
  assert.match(d.querySelector('.typing-home-hero').textContent,/Build speed that lasts/);
  assert.match(d.getElementById('home-coach-advice').textContent,/first|baseline|50-word/i);
  d.getElementById('wordtest-count').value='25';
+ d.getElementById('wordtest-format').value='words';
  a.click('#home-typing-start');
  assert.equal(d.getElementById('training-title').textContent,'Random words');
  a.finishTyping();await a.tick();
  assert.equal(a.saved.history.at(-1).kind,'wordtest');
  assert.equal(a.saved.history.at(-1).wordCount,25);
- assert.match(d.getElementById('finish-coaching').textContent,/this 25-word test/i);
+ assert.match(d.getElementById('finish-coaching').textContent,/accuracy|pace/i);
  a.click('#finish-exit');
  assert.match(d.getElementById('home-typing-summary').textContent,/1 word tests/);
  assert.deepEqual(a.errors,[]);
 });
 test('missed-key focused practice is separated from normal personal-best tracking',async t=>{
- const initial={version:2,weak:{z:9,x:2},history:[{date:'2026-10-17',kind:'wordtest',title:'Random words',wpm:53,accuracy:90,rhythm:80,seconds:45}]};
+ const initial={version:2,weak:{z:9,x:2},history:[{date:'2026-10-17',kind:'wordtest',title:'Random words',wpm:53,accuracy:90,rhythm:80,seconds:45,profileId:'standard-us',testMode:'words',wordCount:25,keyMistakes:{z:9,x:2}}]};
  const a=await app(initial);t.after(()=>a.dom.window.close());
  const d=a.w.document;
  a.click('[data-view="wordtest"]');
  assert.match(d.getElementById('wordtest-coach-evidence').textContent,/z.*9/);
  d.getElementById('wordtest-count').value='25';
+ d.getElementById('wordtest-format').value='words';
  a.click('#wordtest-coach-action');
  assert.equal(d.getElementById('training-title').textContent,'Weak-key word practice');
  assert.ok(d.getElementById('typing-prompt').textContent.split(' ').filter(word=>/[zx]/.test(word)).length>=12);
