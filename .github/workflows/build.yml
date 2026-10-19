@@ -67,10 +67,37 @@ jobs:
           name: devflow-intellij
           path: intellij-plugin/build/distributions/*.zip
 
+  browser:
+    name: Verify typing and keyboard UI in Chromium
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: devflow-jar
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - name: Save rendered UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devflow-browser-screenshots
+          path: build/screenshots/*.png
+
   publish:
     name: Publish tested local binaries
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build, intellij, benchlab]
+    needs: [build, intellij, benchlab, browser]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -91,14 +118,14 @@ jobs:
         run: |
           set -euo pipefail
           test -s artifacts/standalone/devflow.jar
-          test -s artifacts/plugin/devflow-intellij-2.2.0.zip
+          test -s artifacts/plugin/devflow-intellij-2.3.0.zip
           cp artifacts/standalone/devflow.jar devflow.jar
           mkdir -p downloads
-          cp artifacts/plugin/devflow-intellij-2.2.0.zip downloads/devflow-intellij-2.2.0.zip
+          cp artifacts/plugin/devflow-intellij-2.3.0.zip downloads/devflow-intellij-2.3.0.zip
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add devflow.jar downloads/devflow-intellij-2.2.0.zip
+          git add devflow.jar downloads/devflow-intellij-2.3.0.zip
           if ! git diff --cached --quiet; then
-            git commit -m "Publish verified DevFlow 2.2 binaries [skip ci]"
+            git commit -m "Publish verified DevFlow 2.3 binaries [skip ci]"
             git push origin HEAD:main
           fi

@@ -1,18 +1,20 @@
 {
   "name": "devflow-academy",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "bin": {
     "devflow": "scripts/cli.cjs"
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "start": "node scripts/start.mjs"
+    "start": "node scripts/start.mjs",
+    "test:browser": "node tests/browser.smoke.mjs"
   },
   "engines": {
     "node": ">=22"
   },
   "devDependencies": {
-    "jsdom": "^26.1.0"
+    "jsdom": "^26.1.0",
+    "playwright": "^1.58.2"
   },
   "description": "Typing-first developer training with evidence-led coaching and a Java performance laboratory"
 }
